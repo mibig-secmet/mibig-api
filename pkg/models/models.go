@@ -13,4 +13,24 @@ type StatCluster struct {
 	Type        string `json:"type"`
 	Description string `json:"description"`
 	Count       int    `json:"count"`
+	Class       string `json:"css_class"`
+}
+
+type ProductTag struct {
+	Name  string `json:"name"`
+	Class string `json:"css_class"`
+}
+
+type Compound struct {
+	Name string `json:"compound"`
+}
+
+type CompoundList []Compound
+
+type RepositoryEntry struct {
+	Accession    string       `json:"accession"`
+	Minimal      bool         `json:"minimal"`
+	Products     []string     `json:"products"`
+	ProductTags  []ProductTag `json:"classes"`
+	OrganismName string       `json:"organism"`
 }

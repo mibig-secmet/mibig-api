@@ -48,3 +48,13 @@ func (app *application) stats(w http.ResponseWriter, r *http.Request) {
 
 	app.returnJson(stat_info, w)
 }
+
+func (app *application) repository(w http.ResponseWriter, r *http.Request) {
+	repository_entries, err := app.MibigModel.Repository()
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	app.returnJson(repository_entries, w)
+}

@@ -15,11 +15,17 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 }
 
 type VersionInfo struct {
-	Api string `json:"api"`
+	Api        string `json:"api"`
+	BuildTime  string `json:"build_time"`
+	GitVersion string `json:"git_version"`
 }
 
 func (app *application) version(w http.ResponseWriter, r *http.Request) {
-	version_info := VersionInfo{"3.0"}
+	version_info := VersionInfo{
+		Api:        "3.0",
+		BuildTime:  app.BuildTime,
+		GitVersion: app.GitVersion,
+	}
 	app.returnJson(version_info, w)
 }
 

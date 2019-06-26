@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"fmt"
 	_ "github.com/lib/pq"
 	"github.com/pelletier/go-toml"
 	zap "go.uber.org/zap"
@@ -15,6 +16,8 @@ import (
 type application struct {
 	logger     *zap.SugaredLogger
 	MibigModel *postgres.MibigModel
+	BuildTime  string
+	GitVersion string
 }
 
 type config struct {
@@ -22,13 +25,25 @@ type config struct {
 	DatabaseUri string
 }
 
+var (
+	buildTime string
+	gitVer    string
+)
+
 func main() {
 	var configFile string
 	var debug bool
+	var version bool
 
 	flag.StringVar(&configFile, "config", "config.toml", "Path to the config file")
 	flag.BoolVar(&debug, "debug", false, "Debug level logging")
+	flag.BoolVar(&version, "version", false, "Print version and exit")
 	flag.Parse()
+
+	if version {
+		fmt.Printf("Git version: %s\nBuild time: %s\n", gitVer, buildTime)
+		os.Exit(0)
+	}
 
 	logger := setupLogging(debug)
 	defer logger.Sync()
@@ -46,6 +61,8 @@ func main() {
 	app := &application{
 		logger:     logger,
 		MibigModel: &postgres.MibigModel{DB: db},
+		BuildTime:  buildTime,
+		GitVersion: gitVer,
 	}
 
 	mux := app.routes()

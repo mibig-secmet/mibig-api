@@ -4,9 +4,11 @@ import (
 	"database/sql"
 	"flag"
 	_ "github.com/lib/pq"
+	"github.com/pelletier/go-toml"
 	zap "go.uber.org/zap"
 	"log"
 	"net/http"
+	"os"
 	"secondarymetabolites.org/mibig-api/pkg/models/postgres"
 )
 
@@ -18,18 +20,23 @@ type application struct {
 type config struct {
 	Addr        string
 	DatabaseUri string
-	Debug       bool
 }
 
 func main() {
-	conf := new(config)
-	flag.StringVar(&conf.Addr, "addr", ":6424", "HTTP network address")
-	flag.StringVar(&conf.DatabaseUri, "db", "postgres://postgres:secret@localhost/mibig?sslmode=disable", "PostgreSQL database uri")
-	flag.BoolVar(&conf.Debug, "debug", false, "Debug level logging")
+	var configFile string
+	var debug bool
+
+	flag.StringVar(&configFile, "config", "config.toml", "Path to the config file")
+	flag.BoolVar(&debug, "debug", false, "Debug level logging")
 	flag.Parse()
 
-	logger := setupLogging(conf)
+	logger := setupLogging(debug)
 	defer logger.Sync()
+
+	conf, err := createConfig(configFile)
+	if err != nil {
+		logger.Fatalf(err.Error())
+	}
 
 	db, err := initDb(conf)
 	if err != nil {
@@ -50,15 +57,34 @@ func main() {
 	logger.Fatalf(err.Error())
 }
 
-func setupLogging(conf *config) *zap.SugaredLogger {
+func setupLogging(debug bool) *zap.SugaredLogger {
 	logger, err := zap.NewProduction()
-	if conf.Debug {
+	if debug {
 		logger, err = zap.NewDevelopment()
 	}
 	if err != nil {
 		log.Fatalf("Failed to set up logging: %s", err.Error())
 	}
 	return logger.Sugar()
+}
+
+func createConfig(filename string) (*config, error) {
+
+	if _, err := os.Stat(filename); err != nil {
+		return nil, err
+	}
+
+	tomlConf, err := toml.LoadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	conf := config{
+		Addr:        tomlConf.GetDefault("address", ":6424").(string),
+		DatabaseUri: tomlConf.GetDefault("database_uri", "host=localhost port=5432 user=postgres password=secret dbname=mibig sslmode=disable").(string),
+	}
+
+	return &conf, nil
 }
 
 func initDb(conf *config) (*sql.DB, error) {

@@ -13,16 +13,26 @@ import (
 	"secondarymetabolites.org/mibig-api/pkg/models/postgres"
 )
 
+type mail struct {
+	username  string
+	password  string
+	host      string
+	port      int64
+	recipient string
+}
+
 type application struct {
 	logger     *zap.SugaredLogger
 	MibigModel *postgres.MibigModel
 	BuildTime  string
 	GitVersion string
+	Mail       mail
 }
 
 type config struct {
 	Addr        string
 	DatabaseUri string
+	Mail        mail
 }
 
 var (
@@ -63,6 +73,7 @@ func main() {
 		MibigModel: &postgres.MibigModel{DB: db},
 		BuildTime:  buildTime,
 		GitVersion: gitVer,
+		Mail:       conf.Mail,
 	}
 
 	mux := app.routes()
@@ -98,7 +109,14 @@ func createConfig(filename string) (*config, error) {
 
 	conf := config{
 		Addr:        tomlConf.GetDefault("address", ":6424").(string),
-		DatabaseUri: tomlConf.GetDefault("database_uri", "host=localhost port=5432 user=postgres password=secret dbname=mibig sslmode=disable").(string),
+		DatabaseUri: tomlConf.GetDefault("database.uri", "host=localhost port=5432 user=postgres password=secret dbname=mibig sslmode=disable").(string),
+		Mail: mail{
+			username:  tomlConf.Get("mail.user").(string),
+			password:  tomlConf.Get("mail.password").(string),
+			host:      tomlConf.Get("mail.host").(string),
+			port:      tomlConf.Get("mail.port").(int64),
+			recipient: tomlConf.Get("mail.recipient").(string),
+		},
 	}
 
 	return &conf, nil

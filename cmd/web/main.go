@@ -10,29 +10,22 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"secondarymetabolites.org/mibig-api/pkg/models"
 	"secondarymetabolites.org/mibig-api/pkg/models/postgres"
 )
 
-type mail struct {
-	username  string
-	password  string
-	host      string
-	port      int64
-	recipient string
-}
-
 type application struct {
 	logger     *zap.SugaredLogger
-	MibigModel *postgres.MibigModel
+	MibigModel models.MibigModel
 	BuildTime  string
 	GitVersion string
-	Mail       mail
+	Mail       models.EmailSender
 }
 
 type config struct {
 	Addr        string
 	DatabaseUri string
-	Mail        mail
+	Mail        models.MailConfig
 }
 
 var (
@@ -68,12 +61,14 @@ func main() {
 		logger.Fatalf(err.Error())
 	}
 
+	mailSender := models.NewProductionSender(conf.Mail)
+
 	app := &application{
 		logger:     logger,
 		MibigModel: &postgres.MibigModel{DB: db},
 		BuildTime:  buildTime,
 		GitVersion: gitVer,
-		Mail:       conf.Mail,
+		Mail:       mailSender,
 	}
 
 	mux := app.routes()
@@ -110,12 +105,12 @@ func createConfig(filename string) (*config, error) {
 	conf := config{
 		Addr:        tomlConf.GetDefault("address", ":6424").(string),
 		DatabaseUri: tomlConf.GetDefault("database.uri", "host=localhost port=5432 user=postgres password=secret dbname=mibig sslmode=disable").(string),
-		Mail: mail{
-			username:  tomlConf.Get("mail.user").(string),
-			password:  tomlConf.Get("mail.password").(string),
-			host:      tomlConf.Get("mail.host").(string),
-			port:      tomlConf.Get("mail.port").(int64),
-			recipient: tomlConf.Get("mail.recipient").(string),
+		Mail: models.MailConfig{
+			Username:  tomlConf.Get("mail.user").(string),
+			Password:  tomlConf.Get("mail.password").(string),
+			Host:      tomlConf.Get("mail.host").(string),
+			Port:      tomlConf.Get("mail.port").(int64),
+			Recipient: tomlConf.Get("mail.recipient").(string),
 		},
 	}
 

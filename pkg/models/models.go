@@ -47,3 +47,9 @@ type AccessionRequest struct {
 	Compounds []string                `json:"compounds"`
 	Loci      []AccessionRequestLocus `json:"loci"`
 }
+
+type MibigModel interface {
+	Count() (int, error)
+	ClusterStats() ([]StatCluster, error)
+	Repository() ([]RepositoryEntry, error)
+}

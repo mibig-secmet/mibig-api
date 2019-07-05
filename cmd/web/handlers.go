@@ -1,8 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"secondarymetabolites.org/mibig-api/pkg/models"
 	"strings"
@@ -14,13 +14,13 @@ type VersionInfo struct {
 	GitVersion string `json:"git_version"`
 }
 
-func (app *application) version(w http.ResponseWriter, r *http.Request) {
+func (app *application) version(c *gin.Context) {
 	version_info := VersionInfo{
 		Api:        "3.0",
 		BuildTime:  app.BuildTime,
 		GitVersion: app.GitVersion,
 	}
-	app.returnJson(version_info, w)
+	c.JSON(http.StatusOK, &version_info)
 }
 
 type Stats struct {
@@ -28,16 +28,16 @@ type Stats struct {
 	Clusters   []models.StatCluster `json:"clusters"`
 }
 
-func (app *application) stats(w http.ResponseWriter, r *http.Request) {
+func (app *application) stats(c *gin.Context) {
 	count, err := app.MibigModel.Count()
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(c, err)
 		return
 	}
 
 	clusters, err := app.MibigModel.ClusterStats()
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(c, err)
 		return
 	}
 
@@ -46,39 +46,29 @@ func (app *application) stats(w http.ResponseWriter, r *http.Request) {
 		Clusters:   clusters,
 	}
 
-	app.returnJson(stat_info, w)
+	c.JSON(http.StatusOK, &stat_info)
 }
 
-func (app *application) repository(w http.ResponseWriter, r *http.Request) {
+func (app *application) repository(c *gin.Context) {
 	repository_entries, err := app.MibigModel.Repository()
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(c, err)
 		return
 	}
 
-	app.returnJson(repository_entries, w)
+	c.JSON(http.StatusOK, repository_entries)
 }
 
-func (app *application) submit(w http.ResponseWriter, r *http.Request) {
+func (app *application) submit(c *gin.Context) {
 	var req models.AccessionRequest
-
-	if r.Body == nil {
-		app.clientError(w, http.StatusBadRequest)
-		return
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	c.BindJSON(&req)
 
 	if err := app.Mail.Send(req.Email, generateRequestMailBody(&req, app.Mail.Config().Recipient)); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		app.serverError(c, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusAccepted)
-	return
+	c.String(http.StatusAccepted, "")
 }
 
 func generateRequestMailBody(req *models.AccessionRequest, recipient string) []byte {

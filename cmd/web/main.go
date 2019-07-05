@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"github.com/gin-contrib/zap"
+	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 	"github.com/pelletier/go-toml"
 	zap "go.uber.org/zap"
@@ -12,6 +14,7 @@ import (
 	"os"
 	"secondarymetabolites.org/mibig-api/pkg/models"
 	"secondarymetabolites.org/mibig-api/pkg/models/postgres"
+	"time"
 )
 
 type application struct {
@@ -20,6 +23,7 @@ type application struct {
 	BuildTime  string
 	GitVersion string
 	Mail       models.EmailSender
+	Mux        *gin.Engine
 }
 
 type config struct {
@@ -48,6 +52,11 @@ func main() {
 		os.Exit(0)
 	}
 
+	if !debug {
+		// set Gin to release mode
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	logger := setupLogging(debug)
 	defer logger.Sync()
 
@@ -62,6 +71,7 @@ func main() {
 	}
 
 	mailSender := models.NewProductionSender(conf.Mail)
+	mux := setupMux(debug, logger.Desugar())
 
 	app := &application{
 		logger:     logger,
@@ -69,15 +79,30 @@ func main() {
 		BuildTime:  buildTime,
 		GitVersion: gitVer,
 		Mail:       mailSender,
+		Mux:        mux,
 	}
 
-	mux := app.routes()
+	mux = app.routes()
 
 	logger.Infow("starting server",
 		"address", conf.Addr,
 	)
 	err = http.ListenAndServe(conf.Addr, mux)
 	logger.Fatalf(err.Error())
+}
+
+func setupMux(debug bool, logger *zap.Logger) *gin.Engine {
+	var mux *gin.Engine
+	if !debug {
+		// In production mode, use zap Logger middleware
+		mux = gin.New()
+		mux.Use(ginzap.Ginzap(logger, time.RFC3339, true))
+		mux.Use(ginzap.RecoveryWithZap(logger, true))
+	} else {
+		// otherwise use the default Gin logging, which is prettier
+		mux = gin.Default()
+	}
+	return mux
 }
 
 func setupLogging(debug bool) *zap.SugaredLogger {

@@ -1,13 +1,18 @@
 package main
 
-import "net/http"
+import "github.com/gin-gonic/gin"
 
-func (app *application) routes() *http.ServeMux {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/api/v1/version", app.version)
-	mux.HandleFunc("/api/v1/stats", app.stats)
-	mux.HandleFunc("/api/v1/repository", app.repository)
-	mux.HandleFunc("/api/v1/submit", app.submit)
+func (app *application) routes() *gin.Engine {
+	api := app.Mux.Group("/api")
+	{
+		v1 := api.Group("/v1")
+		{
+			v1.GET("/version", app.version)
+			v1.GET("/stats", app.stats)
+			v1.GET("/repository", app.repository)
+			v1.POST("/submit", app.submit)
+		}
+	}
 
-	return mux
+	return app.Mux
 }

@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/andreyvit/diff"
+	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/smtp"
+	"net/url"
 	"secondarymetabolites.org/mibig-api/pkg/models"
 	"secondarymetabolites.org/mibig-api/pkg/models/mock"
 	"strings"
@@ -44,14 +46,18 @@ func newTestApp() (*application, *httptest.Server, *emailRecorder) {
 	mux := setupMux(true, logger.Desugar())
 
 	app := &application{
-		logger:     logger,
-		Mail:       sender,
-		BuildTime:  "Fake time",
-		GitVersion: "deadbeef",
-		MibigModel: &mock.MibigModel{},
-		Mux:        mux,
+		logger:      logger,
+		Mail:        sender,
+		BuildTime:   "Fake time",
+		GitVersion:  "deadbeef",
+		MibigModel:  &mock.MibigModel{},
+		LegacyModel: &mock.LegacyModel{},
+		Mux:         mux,
 	}
 	mux = app.routes()
+	mux.GET("/static/genes_form.html", func(c *gin.Context) {
+		c.String(http.StatusOK, "Nothing to see here")
+	})
 
 	ts := httptest.NewServer(mux)
 
@@ -198,4 +204,77 @@ func TestSubmit(t *testing.T) {
 		t.Errorf("Unexpected email body:\n%v", diff.LineDiff(expected, actual))
 	}
 
+}
+
+func TestLegacySubmission(t *testing.T) {
+	_, ts, _ := newTestApp()
+	defer ts.Close()
+
+	form := url.Values{}
+	form.Set("json", `{"foo": "bar"}`)
+	form.Set("version", "1")
+
+	response, err := ts.Client().Post(ts.URL+"/api/v1/bgc-registration", "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if response.StatusCode != http.StatusOK {
+		t.Errorf("Expected %d, got %d (%s)", http.StatusOK, response.StatusCode, string(body))
+	}
+}
+
+func TestLegacyGeneSubmission(t *testing.T) {
+	_, ts, _ := newTestApp()
+	defer ts.Close()
+
+	form := url.Values{}
+	form.Set("data", `{"foo": "bar"}`)
+	form.Set("version", "1")
+	form.Set("bgc_id", "BGC1234567")
+	form.Set("target", "gene_info")
+
+	response, err := ts.Client().Post(ts.URL+"/api/v1/bgc-detail-registration", "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if response.StatusCode != http.StatusNoContent {
+		t.Errorf("Expected %d, got %d (%s)", http.StatusNoContent, response.StatusCode, string(body))
+	}
+}
+
+func TestLegacyNrpsSubmission(t *testing.T) {
+	_, ts, _ := newTestApp()
+	defer ts.Close()
+
+	form := url.Values{}
+	form.Set("data", `{"foo": "bar"}`)
+	form.Set("version", "1")
+	form.Set("bgc_id", "BGC1234567")
+	form.Set("target", "nrps_info")
+
+	response, err := ts.Client().Post(ts.URL+"/api/v1/bgc-detail-registration", "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if response.StatusCode != http.StatusNoContent {
+		t.Errorf("Expected %d, got %d (%s)", http.StatusNoContent, response.StatusCode, string(body))
+	}
 }

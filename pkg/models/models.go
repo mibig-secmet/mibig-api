@@ -1,5 +1,9 @@
 package models
 
+import (
+	"time"
+)
+
 type JsonData map[string]interface{}
 
 type Entry struct {
@@ -52,4 +56,36 @@ type MibigModel interface {
 	Count() (int, error)
 	ClusterStats() ([]StatCluster, error)
 	Repository() ([]RepositoryEntry, error)
+}
+
+type LegacySubmission struct {
+	Id        int
+	Submitted time.Time
+	Modified  time.Time
+	Raw       string
+	Version   int
+}
+
+type LegacyGeneSubmission struct {
+	Id        int
+	BgcId     string
+	Submitted time.Time
+	Modified  time.Time
+	Raw       string
+	Version   int
+}
+
+type LegacyNrpsSubmission struct {
+	Id        int
+	BgcId     string
+	Submitted time.Time
+	Modified  time.Time
+	Raw       string
+	Version   int
+}
+
+type LecagyModel interface {
+	CreateSubmission(submission *LegacySubmission) error
+	CreateGeneSubmission(submission *LegacyGeneSubmission) error
+	CreateNrpsSubmission(submission *LegacyNrpsSubmission) error
 }

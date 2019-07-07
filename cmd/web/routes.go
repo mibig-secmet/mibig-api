@@ -11,6 +11,8 @@ func (app *application) routes() *gin.Engine {
 			v1.GET("/stats", app.stats)
 			v1.GET("/repository", app.repository)
 			v1.POST("/submit", app.submit)
+			v1.POST("/bgc-registration", app.LegacyStoreSubmission)
+			v1.POST("/bgc-detail-registration", app.LegacyStoreBgcDetailSubmission)
 		}
 	}
 

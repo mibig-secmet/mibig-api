@@ -28,9 +28,10 @@ type application struct {
 }
 
 type config struct {
-	Addr        string
-	DatabaseUri string
-	Mail        models.MailConfig
+	Addr              string
+	DatabaseUri       string
+	LegacyDatabaseUri string
+	Mail              models.MailConfig
 }
 
 var (
@@ -71,13 +72,18 @@ func main() {
 		logger.Fatalf(err.Error())
 	}
 
+	legacy_db, err := initLegacyDb(conf)
+	if err != nil {
+		logger.Fatalf(err.Error())
+	}
+
 	mailSender := models.NewProductionSender(conf.Mail)
 	mux := setupMux(debug, logger.Desugar())
 
 	app := &application{
 		logger:      logger,
 		MibigModel:  &postgres.MibigModel{DB: db},
-		LegacyModel: &postgres.LegacyModel{DB: db},
+		LegacyModel: &postgres.LegacyModel{DB: legacy_db},
 		BuildTime:   buildTime,
 		GitVersion:  gitVer,
 		Mail:        mailSender,
@@ -130,8 +136,9 @@ func createConfig(filename string) (*config, error) {
 	}
 
 	conf := config{
-		Addr:        tomlConf.GetDefault("address", ":6424").(string),
-		DatabaseUri: tomlConf.GetDefault("database.uri", "host=localhost port=5432 user=postgres password=secret dbname=mibig sslmode=disable").(string),
+		Addr:              tomlConf.GetDefault("address", ":6424").(string),
+		DatabaseUri:       tomlConf.GetDefault("database.uri", "host=localhost port=5432 user=postgres password=secret dbname=mibig sslmode=disable").(string),
+		LegacyDatabaseUri: tomlConf.GetDefault("legacy_database.uri", "host=localhost port=5432 user=postgres password=secret dbname=mibig_submissions sslmode=disable").(string),
 		Mail: models.MailConfig{
 			Username:  tomlConf.Get("mail.user").(string),
 			Password:  tomlConf.Get("mail.password").(string),
@@ -146,6 +153,18 @@ func createConfig(filename string) (*config, error) {
 
 func initDb(conf *config) (*sql.DB, error) {
 	db, err := sql.Open("postgres", conf.DatabaseUri)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+	return db, nil
+}
+
+func initLegacyDb(conf *config) (*sql.DB, error) {
+	db, err := sql.Open("postgres", conf.LegacyDatabaseUri)
 	if err != nil {
 		return nil, err
 	}

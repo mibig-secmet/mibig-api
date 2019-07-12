@@ -7,6 +7,7 @@ require (
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/gin-contrib/zap v0.0.0-20190528085758-3cc18cd8fce3
 	github.com/gin-gonic/gin v1.4.0
+	github.com/google/go-cmp v0.3.0
 	github.com/lib/pq v1.1.1
 	github.com/mattn/go-isatty v0.0.8 // indirect
 	github.com/pelletier/go-toml v1.4.0

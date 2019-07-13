@@ -1,6 +1,7 @@
 package queries
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -8,8 +9,8 @@ import (
 
 type QueryTerm interface {
 	Query() string
+	MarshalJSON() ([]byte, error)
 	/*
-		MarshalJSON() ([]byte, error)
 		UnmarshalJSON(data []byte) error
 	*/
 }
@@ -62,6 +63,14 @@ func (e *Expression) Query() string {
 	return fmt.Sprintf("%s%s", category, e.Term)
 }
 
+func (e *Expression) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Type     string `json:"term_type"`
+		Category string `json:"category"`
+		Term     string `json:"term"`
+	}{Type: "expr", Category: e.Category, Term: e.Term})
+}
+
 type Operation struct {
 	Operation OperationType `json:"operation"`
 	Left      QueryTerm     `json:"left"`
@@ -82,6 +91,15 @@ func (o *Operation) Op() string {
 
 func (o *Operation) Query() string {
 	return fmt.Sprintf("( %s %s %s )", o.Left.Query(), o.Op(), o.Right.Query())
+}
+
+func (o *Operation) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Type      string    `json:"term_type"`
+		Operation string    `json:"operation"`
+		Left      QueryTerm `json:"left"`
+		Right     QueryTerm `json:"right"`
+	}{Type: "op", Operation: strings.ToLower(o.Op()), Left: o.Left, Right: o.Right})
 }
 
 type OperationType int

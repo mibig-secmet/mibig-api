@@ -1,6 +1,7 @@
 package queries
 
 import (
+	"encoding/json"
 	"github.com/google/go-cmp/cmp"
 	"strings"
 	"testing"
@@ -113,6 +114,25 @@ func TestExpressionQuery(t *testing.T) {
 	}
 }
 
+func TestExpressionJson(t *testing.T) {
+	var jsonTests = []struct {
+		expr     Expression
+		expected string
+	}{
+		{expr: Expression{Term: "nrps", Category: "type"}, expected: `{"term_type":"expr","category":"type","term":"nrps"}`},
+	}
+
+	for _, tt := range jsonTests {
+		actual, err := json.Marshal(&tt.expr)
+		if err != nil {
+			t.Error(err)
+		}
+		if string(actual) != tt.expected {
+			t.Errorf("Expression %v JSON marshalling unexpected: expected '%s', got '%s'", tt.expr, tt.expected, string(actual))
+		}
+	}
+}
+
 func TestOperationQuery(t *testing.T) {
 	var queryTests = []struct {
 		op       Operation
@@ -136,6 +156,36 @@ func TestOperationQuery(t *testing.T) {
 		actual := tt.op.Query()
 		if actual != tt.expected {
 			t.Errorf("Expression.Query(%v): expected '%s', got '%s'", tt.op, tt.expected, actual)
+		}
+	}
+}
+
+func TestOperationJson(t *testing.T) {
+	var jsonTests = []struct {
+		op       Operation
+		expected string
+	}{
+		{Operation{Operation: AND,
+			Left:  &Expression{Category: "type", Term: "nrps"},
+			Right: &Expression{Category: "genus", Term: "streptomyces"},
+		}, `{"term_type":"op","operation":"and","left":{"term_type":"expr","category":"type","term":"nrps"},"right":{"term_type":"expr","category":"genus","term":"streptomyces"}}`},
+		{Operation{Operation: OR,
+			Left:  &Expression{Category: "type", Term: "nrps"},
+			Right: &Expression{Category: "genus", Term: "streptomyces"},
+		}, `{"term_type":"op","operation":"or","left":{"term_type":"expr","category":"type","term":"nrps"},"right":{"term_type":"expr","category":"genus","term":"streptomyces"}}`},
+		{Operation{Operation: EXCEPT,
+			Left:  &Expression{Category: "type", Term: "nrps"},
+			Right: &Expression{Category: "genus", Term: "streptomyces"},
+		}, `{"term_type":"op","operation":"except","left":{"term_type":"expr","category":"type","term":"nrps"},"right":{"term_type":"expr","category":"genus","term":"streptomyces"}}`},
+	}
+
+	for _, tt := range jsonTests {
+		actual, err := json.Marshal(&tt.op)
+		if err != nil {
+			t.Error(err)
+		}
+		if string(actual) != tt.expected {
+			t.Errorf("Operation %v JSON marshalling unexpected: expected '%s', got '%s'", tt.op, tt.expected, string(actual))
 		}
 	}
 }

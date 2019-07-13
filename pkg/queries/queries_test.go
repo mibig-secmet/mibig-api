@@ -114,7 +114,7 @@ func TestExpressionQuery(t *testing.T) {
 	}
 }
 
-func TestExpressionJson(t *testing.T) {
+func TestExpressionMarshalJson(t *testing.T) {
 	var jsonTests = []struct {
 		expr     Expression
 		expected string
@@ -129,6 +129,26 @@ func TestExpressionJson(t *testing.T) {
 		}
 		if string(actual) != tt.expected {
 			t.Errorf("Expression %v JSON marshalling unexpected: expected '%s', got '%s'", tt.expr, tt.expected, string(actual))
+		}
+	}
+}
+
+func TestExpressionUnmarshalJson(t *testing.T) {
+	var jsonTests = []struct {
+		expected Expression
+		input    []byte
+	}{
+		{expected: Expression{Term: "nrps", Category: "type"}, input: []byte(`{"term_type":"expr","category":"type","term":"nrps"}`)},
+	}
+
+	for _, tt := range jsonTests {
+		actual := Expression{}
+		err := json.Unmarshal(tt.input, &actual)
+		if err != nil {
+			t.Error(err)
+		}
+		if !cmp.Equal(tt.expected, actual) {
+			t.Errorf("Expression.Unmarshal(%s) unexpected result: %s", string(tt.input), cmp.Diff(tt.expected, actual))
 		}
 	}
 }
@@ -160,7 +180,7 @@ func TestOperationQuery(t *testing.T) {
 	}
 }
 
-func TestOperationJson(t *testing.T) {
+func TestOperationMarshalJson(t *testing.T) {
 	var jsonTests = []struct {
 		op       Operation
 		expected string
@@ -177,6 +197,19 @@ func TestOperationJson(t *testing.T) {
 			Left:  &Expression{Category: "type", Term: "nrps"},
 			Right: &Expression{Category: "genus", Term: "streptomyces"},
 		}, `{"term_type":"op","operation":"except","left":{"term_type":"expr","category":"type","term":"nrps"},"right":{"term_type":"expr","category":"genus","term":"streptomyces"}}`},
+		{Operation{Operation: AND,
+			Left: &Expression{Term: "lanthipeptide", Category: "type"},
+			Right: &Operation{Operation: OR,
+				Left: &Operation{Operation: AND,
+					Left:  &Expression{Term: "Streptomyces", Category: "genus"},
+					Right: &Expression{Term: "coelicolor", Category: "species"},
+				},
+				Right: &Operation{Operation: AND,
+					Left:  &Expression{Term: "Lactococcus", Category: "genus"},
+					Right: &Expression{Term: "lactis", Category: "species"},
+				},
+			},
+		}, `{"term_type":"op","operation":"and","left":{"term_type":"expr","category":"type","term":"lanthipeptide"},"right":{"term_type":"op","operation":"or","left":{"term_type":"op","operation":"and","left":{"term_type":"expr","category":"genus","term":"Streptomyces"},"right":{"term_type":"expr","category":"species","term":"coelicolor"}},"right":{"term_type":"op","operation":"and","left":{"term_type":"expr","category":"genus","term":"Lactococcus"},"right":{"term_type":"expr","category":"species","term":"lactis"}}}}`},
 	}
 
 	for _, tt := range jsonTests {
@@ -186,6 +219,50 @@ func TestOperationJson(t *testing.T) {
 		}
 		if string(actual) != tt.expected {
 			t.Errorf("Operation %v JSON marshalling unexpected: expected '%s', got '%s'", tt.op, tt.expected, string(actual))
+		}
+	}
+}
+
+func TestOperationUnmarshalJson(t *testing.T) {
+	var jsonTests = []struct {
+		expected Operation
+		input    []byte
+	}{
+		{Operation{Operation: AND,
+			Left:  &Expression{Category: "type", Term: "nrps"},
+			Right: &Expression{Category: "genus", Term: "streptomyces"},
+		}, []byte(`{"term_type":"op","operation":"and","left":{"term_type":"expr","category":"type","term":"nrps"},"right":{"term_type":"expr","category":"genus","term":"streptomyces"}}`)},
+		{Operation{Operation: OR,
+			Left:  &Expression{Category: "type", Term: "nrps"},
+			Right: &Expression{Category: "genus", Term: "streptomyces"},
+		}, []byte(`{"term_type":"op","operation":"or","left":{"term_type":"expr","category":"type","term":"nrps"},"right":{"term_type":"expr","category":"genus","term":"streptomyces"}}`)},
+		{Operation{Operation: EXCEPT,
+			Left:  &Expression{Category: "type", Term: "nrps"},
+			Right: &Expression{Category: "genus", Term: "streptomyces"},
+		}, []byte(`{"term_type":"op","operation":"except","left":{"term_type":"expr","category":"type","term":"nrps"},"right":{"term_type":"expr","category":"genus","term":"streptomyces"}}`)},
+		{Operation{Operation: AND,
+			Left: &Expression{Term: "lanthipeptide", Category: "type"},
+			Right: &Operation{Operation: OR,
+				Left: &Operation{Operation: AND,
+					Left:  &Expression{Term: "Streptomyces", Category: "genus"},
+					Right: &Expression{Term: "coelicolor", Category: "species"},
+				},
+				Right: &Operation{Operation: AND,
+					Left:  &Expression{Term: "Lactococcus", Category: "genus"},
+					Right: &Expression{Term: "lactis", Category: "species"},
+				},
+			},
+		}, []byte(`{"term_type":"op","operation":"and","left":{"term_type":"expr","category":"type","term":"lanthipeptide"},"right":{"term_type":"op","operation":"or","left":{"term_type":"op","operation":"and","left":{"term_type":"expr","category":"genus","term":"Streptomyces"},"right":{"term_type":"expr","category":"species","term":"coelicolor"}},"right":{"term_type":"op","operation":"and","left":{"term_type":"expr","category":"genus","term":"Lactococcus"},"right":{"term_type":"expr","category":"species","term":"lactis"}}}}`)},
+	}
+
+	for _, tt := range jsonTests {
+		actual := Operation{}
+		err := json.Unmarshal(tt.input, &actual)
+		if err != nil {
+			t.Error(err)
+		}
+		if !cmp.Equal(tt.expected, actual) {
+			t.Errorf("Expression.Unmarshal(%s) unexpected result: %s", string(tt.input), cmp.Diff(tt.expected, actual))
 		}
 	}
 }

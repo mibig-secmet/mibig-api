@@ -10,9 +10,7 @@ import (
 type QueryTerm interface {
 	Query() string
 	MarshalJSON() ([]byte, error)
-	/*
-		UnmarshalJSON(data []byte) error
-	*/
+	UnmarshalJSON(data []byte) error
 }
 
 type QueryType int
@@ -71,6 +69,22 @@ func (e *Expression) MarshalJSON() ([]byte, error) {
 	}{Type: "expr", Category: e.Category, Term: e.Term})
 }
 
+func (e *Expression) UnmarshalJSON(data []byte) error {
+	var tmp struct {
+		Category string `json:"category"`
+		Term     string `json:"term"`
+	}
+	err := json.Unmarshal(data, &tmp)
+	if err != nil {
+		return err
+	}
+
+	e.Category = tmp.Category
+	e.Term = tmp.Term
+
+	return nil
+}
+
 type Operation struct {
 	Operation OperationType `json:"operation"`
 	Left      QueryTerm     `json:"left"`
@@ -102,6 +116,70 @@ func (o *Operation) MarshalJSON() ([]byte, error) {
 	}{Type: "op", Operation: strings.ToLower(o.Op()), Left: o.Left, Right: o.Right})
 }
 
+func (o *Operation) UnmarshalJSON(data []byte) error {
+	var tmp OperationEnvelope
+	err := json.Unmarshal(data, &tmp)
+	if err != nil {
+		return err
+	}
+	var ok bool
+	o.Operation, ok = STRING_OP_MAP[strings.ToLower(tmp.Operation)]
+	if !ok {
+		return fmt.Errorf("Invalid operation '%s'", tmp.Operation)
+	}
+	o.Left, err = unmarshalTerm(tmp.Left)
+	if err != nil {
+		return err
+	}
+	o.Right, err = unmarshalTerm(tmp.Right)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func unmarshalTerm(data json.RawMessage) (QueryTerm, error) {
+	var spy TermSpy
+
+	err := json.Unmarshal(data, &spy)
+	if err != nil {
+		return nil, err
+	}
+
+	switch term_type := strings.ToLower(spy.Type); term_type {
+	case "expr":
+		{
+			var expr Expression
+			err := json.Unmarshal(data, &expr)
+			if err != nil {
+				return nil, err
+			}
+			return &expr, nil
+		}
+	case "op":
+		{
+			var op Operation
+			err := json.Unmarshal(data, &op)
+			if err != nil {
+				return nil, err
+			}
+			return &op, nil
+		}
+	}
+
+	return nil, fmt.Errorf("Invalid term_type '%s'", spy.Type)
+}
+
+type TermSpy struct {
+	Type string `json:"term_type"`
+}
+
+type OperationEnvelope struct {
+	Operation string          `json:"operation"`
+	Left      json.RawMessage `json:"left"`
+	Right     json.RawMessage `json:"right"`
+}
+
 type OperationType int
 
 const (
@@ -109,6 +187,12 @@ const (
 	OR
 	EXCEPT
 )
+
+var STRING_OP_MAP = map[string]OperationType{
+	"and":    AND,
+	"or":     OR,
+	"except": EXCEPT,
+}
 
 type Parser struct {
 	tokens   []string
@@ -135,13 +219,7 @@ func (p *Parser) ConsumeExpected(expected string) bool {
 }
 
 func NewParser(input string) *Parser {
-	parser := Parser{
-		keywords: map[string]OperationType{
-			"and":    AND,
-			"or":     OR,
-			"except": EXCEPT,
-		},
-	}
+	parser := Parser{keywords: STRING_OP_MAP}
 
 	parser.tokens = generateTokens(input)
 

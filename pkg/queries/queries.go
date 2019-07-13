@@ -36,7 +36,6 @@ type Query struct {
 	Terms      QueryTerm  `json:"terms"`
 }
 
-// TODO: Add validation
 func NewQueryFromString(input string) (*Query, error) {
 	var err error
 	query := Query{QueryType: Cluster, ReturnType: Json}

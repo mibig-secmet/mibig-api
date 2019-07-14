@@ -21,6 +21,18 @@ const (
 	Domain
 )
 
+var STRING_QUERY_TYPE_MAP = map[string]QueryType{
+	"cluster": Cluster,
+	"cds":     Cds,
+	"domain":  Domain,
+}
+
+var QUERY_TYPE_STRING_MAP = map[QueryType]string{
+	Cluster: "cluster",
+	Cds:     "cds",
+	Domain:  "domain",
+}
+
 type ReturnType int
 
 const (
@@ -29,6 +41,20 @@ const (
 	NucleotideFasta
 	AminoAcidFasta
 )
+
+var STRING_RETURN_TYPE_MAP = map[string]ReturnType{
+	"json":   Json,
+	"csv":    Csv,
+	"fasta":  NucleotideFasta,
+	"fastaa": AminoAcidFasta,
+}
+
+var RETURN_TYPE_STRING_MAP = map[ReturnType]string{
+	Json:            "json",
+	Csv:             "csv",
+	NucleotideFasta: "fasta",
+	AminoAcidFasta:  "fastaa",
+}
 
 type Query struct {
 	QueryType  QueryType  `json:"search"`
@@ -45,6 +71,64 @@ func NewQueryFromString(input string) (*Query, error) {
 	}
 
 	return &query, nil
+}
+
+func (q *Query) MarshalJSON() ([]byte, error) {
+	var tmp struct {
+		QueryString  string          `json:"search"`
+		ReturnString string          `json:"return_type"`
+		Terms        json.RawMessage `json:"terms"`
+	}
+	var err error
+	var ok bool
+
+	tmp.Terms, err = json.Marshal(q.Terms)
+	if err != nil {
+		return nil, err
+	}
+
+	tmp.QueryString, ok = QUERY_TYPE_STRING_MAP[q.QueryType]
+	if !ok {
+		return nil, fmt.Errorf("Unexpected QueryType %d", q.QueryType)
+	}
+
+	tmp.ReturnString, ok = RETURN_TYPE_STRING_MAP[q.ReturnType]
+	if !ok {
+		return nil, fmt.Errorf("Unexpected ReturnType %d", q.ReturnType)
+	}
+
+	return json.Marshal(&tmp)
+}
+
+func (q *Query) UnmarshalJSON(data []byte) error {
+	var tmp struct {
+		QueryString  string          `json:"search"`
+		ReturnString string          `json:"return_type"`
+		Terms        json.RawMessage `json:"terms"`
+	}
+	var ok bool
+
+	err := json.Unmarshal(data, &tmp)
+	if err != nil {
+		return err
+	}
+
+	q.QueryType, ok = STRING_QUERY_TYPE_MAP[strings.ToLower(tmp.QueryString)]
+	if !ok {
+		return fmt.Errorf("Invalid query type %s", tmp.QueryString)
+	}
+
+	q.ReturnType, ok = STRING_RETURN_TYPE_MAP[strings.ToLower(tmp.ReturnString)]
+	if !ok {
+		return fmt.Errorf("Invalid return type %s", tmp.ReturnString)
+	}
+
+	q.Terms, err = unmarshalTerm(tmp.Terms)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type Expression struct {

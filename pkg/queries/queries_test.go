@@ -79,6 +79,45 @@ func TestQueryFromString(t *testing.T) {
 	}
 }
 
+func TestQueryFromJson(t *testing.T) {
+	var queryTests = []struct {
+		input    []byte
+		expected Query
+	}{
+		{[]byte(`{"search":"cluster","return_type":"json","terms":{"term_type":"expr","category":"type","term":"nrps"}}`), Query{Terms: &Expression{Category: "type", Term: "nrps"}}},
+	}
+
+	for _, tt := range queryTests {
+		actual := Query{}
+		err := json.Unmarshal(tt.input, &actual)
+		if err != nil {
+			t.Error(err)
+		}
+		if !cmp.Equal(tt.expected, actual) {
+			t.Errorf("Unexpected Query from json (%s):\n%s", string(tt.input), cmp.Diff(tt.expected, actual))
+		}
+	}
+}
+
+func TestQueryToJson(t *testing.T) {
+	var queryTests = []struct {
+		expected []byte
+		input    Query
+	}{
+		{[]byte(`{"search":"cluster","return_type":"json","terms":{"term_type":"expr","category":"type","term":"nrps"}}`), Query{Terms: &Expression{Category: "type", Term: "nrps"}}},
+	}
+
+	for _, tt := range queryTests {
+		actual, err := json.Marshal(&tt.input)
+		if err != nil {
+			t.Error(err)
+		}
+		if !cmp.Equal(tt.expected, actual) {
+			t.Errorf("Unexpected Query(%v) to json:\n%s", tt.input, cmp.Diff(tt.expected, actual))
+		}
+	}
+}
+
 func TestGenerateTokens(t *testing.T) {
 	var tokenTests = []struct {
 		input    string

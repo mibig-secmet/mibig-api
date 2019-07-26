@@ -1,6 +1,7 @@
 package models
 
 import (
+	"secondarymetabolites.org/mibig-api/pkg/queries"
 	"time"
 )
 
@@ -56,6 +57,8 @@ type MibigModel interface {
 	Count() (int, error)
 	ClusterStats() ([]StatCluster, error)
 	Repository() ([]RepositoryEntry, error)
+	Search(t queries.QueryTerm) ([]int, error)
+	Get(ids []int) ([]RepositoryEntry, error)
 }
 
 type LegacySubmission struct {

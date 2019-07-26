@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"secondarymetabolites.org/mibig-api/pkg/models"
+	"secondarymetabolites.org/mibig-api/pkg/queries"
 )
 
 type VersionInfo struct {
@@ -55,4 +56,71 @@ func (app *application) repository(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, repository_entries)
+}
+
+type queryContainer struct {
+	Query        *queries.Query `json:"query"`
+	SearchString string         `json:"search_string"`
+	Paginate     int            `json:"paginate"`
+	Offset       int            `json:"offset"`
+	Verbose      bool           `json:"verbose"`
+}
+
+type queryResult struct {
+	Total    int                      `json:"total"`
+	Clusters []models.RepositoryEntry `json:"clusters"`
+	Offset   int                      `json:"offset"`
+	Paginate int                      `json:"paginate"`
+	Stats    string                   `json:"stats"`
+}
+
+type queryError struct {
+	Message string `json:"message"`
+	Error   bool   `json:"error"`
+}
+
+func (app *application) search(c *gin.Context) {
+	var qc queryContainer
+	err := c.BindJSON(&qc)
+	if err != nil {
+		app.serverError(c, err)
+		return
+	}
+
+	if qc.Query == nil && qc.SearchString == "" {
+		c.JSON(http.StatusBadRequest, queryError{Message: "Invalid query", Error: true})
+		return
+	}
+
+	if qc.Query == nil {
+		qc.Query, err = queries.NewQueryFromString(qc.SearchString)
+		if err != nil {
+			app.serverError(c, err)
+			return
+		}
+	}
+
+	var entry_ids []int
+	entry_ids, err = app.MibigModel.Search(qc.Query.Terms)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, queryError{Message: err.Error(), Error: true})
+		return
+	}
+
+	var clusters []models.RepositoryEntry
+	clusters, err = app.MibigModel.Get(entry_ids)
+	if err != nil {
+		app.serverError(c, err)
+		return
+	}
+
+	result := queryResult{
+		Total:    len(entry_ids),
+		Clusters: clusters,
+		Offset:   qc.Offset,
+		Paginate: qc.Paginate,
+		Stats:    "Implement me",
+	}
+
+	c.JSON(http.StatusOK, &result)
 }

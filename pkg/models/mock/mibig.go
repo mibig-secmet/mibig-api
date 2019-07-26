@@ -2,6 +2,7 @@ package mock
 
 import (
 	"secondarymetabolites.org/mibig-api/pkg/models"
+	"secondarymetabolites.org/mibig-api/pkg/queries"
 )
 
 type MibigModel struct {
@@ -35,7 +36,7 @@ var fakeRepo = []models.RepositoryEntry{
 		Accession:    "BGC1234567",
 		Minimal:      false,
 		Products:     []string{"testomycin"},
-		ProductTags:  []models.ProductTag{models.ProductTag{Name: "NRP", Class: "NRP"}},
+		ProductTags:  []models.ProductTag{models.ProductTag{Name: "NRP", Class: "nrps"}},
 		OrganismName: "E. xample",
 	},
 }
@@ -44,6 +45,40 @@ func (m *MibigModel) Repository() ([]models.RepositoryEntry, error) {
 	return fakeRepo, nil
 }
 
-func (m *MibigModel) Get(id int) (*models.Entry, error) {
-	return nil, nil
+var fakeDB = map[int]models.RepositoryEntry{
+	1: models.RepositoryEntry{
+		Accession:    "BGC0000001",
+		Minimal:      false,
+		Products:     []string{"testomycin A"},
+		ProductTags:  []models.ProductTag{models.ProductTag{Name: "Lipopeptide", Class: "nrps"}},
+		OrganismName: "E. xample",
+	},
+	23: models.RepositoryEntry{
+		Accession:    "BGC0000023",
+		Minimal:      false,
+		Products:     []string{"testomycin B"},
+		ProductTags:  []models.ProductTag{models.ProductTag{Name: "Lanthipeptide", Class: "ripp"}},
+		OrganismName: "E. xample",
+	},
+	42: models.RepositoryEntry{
+		Accession:    "BGC0000042",
+		Minimal:      false,
+		Products:     []string{"testomycin C"},
+		ProductTags:  []models.ProductTag{models.ProductTag{Name: "glycopeptide", Class: "nrps"}},
+		OrganismName: "E. xample",
+	},
+}
+
+func (m *MibigModel) Get(ids []int) ([]models.RepositoryEntry, error) {
+	var entries []models.RepositoryEntry
+	for _, id := range ids {
+		if entry, ok := fakeDB[id]; ok {
+			entries = append(entries, entry)
+		}
+	}
+	return entries, nil
+}
+
+func (m *MibigModel) Search(t queries.QueryTerm) ([]int, error) {
+	return []int{1, 23, 42}, nil
 }

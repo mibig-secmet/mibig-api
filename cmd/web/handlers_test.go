@@ -3,16 +3,15 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/andreyvit/diff"
 	"github.com/gin-gonic/gin"
+	"github.com/google/go-cmp/cmp"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/smtp"
-	"net/url"
 	"secondarymetabolites.org/mibig-api/pkg/models"
 	"secondarymetabolites.org/mibig-api/pkg/models/mock"
-	"strings"
+	"secondarymetabolites.org/mibig-api/pkg/queries"
 	"testing"
 )
 
@@ -33,6 +32,8 @@ func mockSend(expectedError error) (func(string, smtp.Auth, string, []string, []
 }
 
 func newTestApp() (*application, *httptest.Server, *emailRecorder) {
+	gin.SetMode(gin.ReleaseMode)
+	gin.DefaultWriter = ioutil.Discard
 	logger := setupLogging(true)
 	conf := models.MailConfig{
 		Username:  "alice",
@@ -154,127 +155,89 @@ func TestRepository(t *testing.T) {
 	}
 }
 
-func TestSubmit(t *testing.T) {
-	_, ts, mail_rec := newTestApp()
+func TestSearch(t *testing.T) {
+	app, ts, _ := newTestApp()
 	defer ts.Close()
 
-	expected_body := strings.Join([]string{
-		"From: alice@example.com\r",
-		"To: alice@example.com\r",
-		"Subject: MIBiG update / request\r",
-		"\r",
-		"Name: Alice",
-		"Email: alice@example.com",
-		"Compound: testomycin",
-		"Loci:",
-		"  ABC12345 (23 - 42)",
-	}, "\n")
-
-	req := models.AccessionRequest{
-		Name:      "Alice",
-		Email:     "alice@example.com",
-		Compounds: []string{"testomycin"},
-		Loci: []models.AccessionRequestLocus{
-			models.AccessionRequestLocus{
-				Start:            23,
-				End:              42,
-				GenBankAccession: "ABC12345",
+	fake_clusters, _ := app.MibigModel.Get([]int{1, 23, 42})
+	tests := []struct {
+		Name             string
+		Query            *queries.Query
+		SearchString     string
+		ExpectedStatus   int
+		ExpectedResponse *queryResult
+		ExpectedError    *queryError
+	}{
+		{
+			Name:           "search string",
+			SearchString:   "nrps OR ripp",
+			ExpectedStatus: http.StatusOK,
+			ExpectedResponse: &queryResult{
+				Total:    3,
+				Clusters: fake_clusters,
+				Offset:   0,
+				Paginate: 0,
+				Stats:    "Implement me",
+			},
+		},
+		{
+			Name:           "empty string",
+			SearchString:   "",
+			ExpectedStatus: http.StatusBadRequest,
+			ExpectedError: &queryError{
+				Message: "Invalid query",
+				Error:   true,
 			},
 		},
 	}
 
-	raw_req, err := json.Marshal(&req)
-	req_body := bytes.NewReader(raw_req)
+	for _, tt := range tests {
 
-	response, err := ts.Client().Post(ts.URL+"/api/v1/submit", "application/json", req_body)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer response.Body.Close()
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
+		t.Run(tt.Name, func(t *testing.T) {
+			req := queryContainer{
+				SearchString: tt.SearchString,
+				Query:        tt.Query,
+			}
 
-	if response.StatusCode != http.StatusAccepted {
-		t.Errorf("Expected %d, got %d (%s)", http.StatusAccepted, response.StatusCode, string(body))
-	}
+			raw_req, err := json.Marshal(&req)
+			req_body := bytes.NewReader(raw_req)
 
-	if actual, expected := strings.TrimSpace(string(mail_rec.msg)), strings.TrimSpace(expected_body); actual != expected {
-		t.Errorf("Unexpected email body:\n%v", diff.LineDiff(expected, actual))
-	}
+			response, err := ts.Client().Post(ts.URL+"/api/v1/search", "application/json", req_body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer response.Body.Close()
 
-}
+			if response.StatusCode != tt.ExpectedStatus {
+				t.Errorf("Expected %d, got %d", tt.ExpectedStatus, response.StatusCode)
+			}
 
-func TestLegacySubmission(t *testing.T) {
-	_, ts, _ := newTestApp()
-	defer ts.Close()
+			body, err := ioutil.ReadAll(response.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	form := url.Values{}
-	form.Set("json", `{"foo": "bar"}`)
-	form.Set("version", "1")
+			if tt.ExpectedResponse != nil {
+				var parsed queryResult
+				err = json.Unmarshal(body, &parsed)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !cmp.Equal(*tt.ExpectedResponse, parsed) {
+					t.Errorf("Unexpected response.\n%s", cmp.Diff(*tt.ExpectedResponse, parsed))
+				}
+			}
 
-	response, err := ts.Client().Post(ts.URL+"/api/v1/bgc-registration", "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer response.Body.Close()
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if response.StatusCode != http.StatusOK {
-		t.Errorf("Expected %d, got %d (%s)", http.StatusOK, response.StatusCode, string(body))
-	}
-}
-
-func TestLegacyGeneSubmission(t *testing.T) {
-	_, ts, _ := newTestApp()
-	defer ts.Close()
-
-	form := url.Values{}
-	form.Set("data", `{"foo": "bar"}`)
-	form.Set("version", "1")
-	form.Set("bgc_id", "BGC1234567")
-	form.Set("target", "gene_info")
-
-	response, err := ts.Client().Post(ts.URL+"/api/v1/bgc-detail-registration", "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer response.Body.Close()
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if response.StatusCode != http.StatusNoContent {
-		t.Errorf("Expected %d, got %d (%s)", http.StatusNoContent, response.StatusCode, string(body))
-	}
-}
-
-func TestLegacyNrpsSubmission(t *testing.T) {
-	_, ts, _ := newTestApp()
-	defer ts.Close()
-
-	form := url.Values{}
-	form.Set("data", `{"foo": "bar"}`)
-	form.Set("version", "1")
-	form.Set("bgc_id", "BGC1234567")
-	form.Set("target", "nrps_info")
-
-	response, err := ts.Client().Post(ts.URL+"/api/v1/bgc-detail-registration", "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer response.Body.Close()
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if response.StatusCode != http.StatusNoContent {
-		t.Errorf("Expected %d, got %d (%s)", http.StatusNoContent, response.StatusCode, string(body))
+			if tt.ExpectedError != nil {
+				var parsed queryError
+				err = json.Unmarshal(body, &parsed)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !cmp.Equal(*tt.ExpectedError, parsed) {
+					t.Errorf("Unexpected response.\n%s", cmp.Diff(*tt.ExpectedError, parsed))
+				}
+			}
+		})
 	}
 }

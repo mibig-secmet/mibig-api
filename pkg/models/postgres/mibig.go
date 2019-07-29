@@ -32,7 +32,7 @@ func (m *MibigModel) ClusterStats() ([]models.StatCluster, error) {
 		SELECT jsonb_array_elements_text(data#>'{cluster, biosyn_class}') AS biosyn_class,
 			   COUNT(1) AS entry_count FROM mibig.entries GROUP BY biosyn_class
 	) counter
-	LEFT JOIN mibig.bgc_types t ON (counter.biosyn_class = t.term)
+	LEFT JOIN mibig.bgc_types t ON (counter.biosyn_class = t.name)
 	ORDER BY entry_count DESC`
 
 	var clusters []models.StatCluster

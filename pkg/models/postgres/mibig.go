@@ -223,3 +223,35 @@ func (m *MibigModel) Search(t queries.QueryTerm) ([]int, error) {
 	// Should never get here
 	return entry_ids, nil
 }
+
+var availableByCategory = map[string]string{
+	"term":     `SELECT DISTINCT(term), description FROM mibig.bgc_types WHERE term ILIKE concat($1::text, '%') OR description ILIKE concat($1::text, '%') ORDER BY term`,
+	"compound": `SELECT DISTINCT(name), name FROM mibig.compounds WHERE name ILIKE concat($1::text, '%')`,
+}
+
+func (m *MibigModel) Available(category string, term string) ([]models.AvailableTerm, error) {
+	var (
+		available []models.AvailableTerm
+		statement string
+		ok        bool
+	)
+
+	if statement, ok = availableByCategory[category]; !ok {
+		return nil, models.ErrInvalidCategory
+	}
+	rows, err := m.DB.Query(statement, term)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var av models.AvailableTerm
+		err = rows.Scan(&av.Val, &av.Desc)
+		if err != nil {
+			return nil, err
+		}
+		available = append(available, av)
+	}
+	return available, nil
+}

@@ -82,3 +82,16 @@ func (m *MibigModel) Get(ids []int) ([]models.RepositoryEntry, error) {
 func (m *MibigModel) Search(t queries.QueryTerm) ([]int, error) {
 	return []int{1, 23, 42}, nil
 }
+
+func (m *MibigModel) Available(category string, term string) ([]models.AvailableTerm, error) {
+	terms := map[string][]models.AvailableTerm{
+		"type": []models.AvailableTerm{
+			{Val: "glycopeptide", Desc: "Glycopeptide"},
+		},
+	}
+	res, ok := terms[category]
+	if !ok {
+		return nil, models.ErrInvalidCategory
+	}
+	return res, nil
+}

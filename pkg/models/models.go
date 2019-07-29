@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"secondarymetabolites.org/mibig-api/pkg/queries"
 	"time"
 )
@@ -59,7 +60,15 @@ type MibigModel interface {
 	Repository() ([]RepositoryEntry, error)
 	Search(t queries.QueryTerm) ([]int, error)
 	Get(ids []int) ([]RepositoryEntry, error)
+	Available(category string, term string) ([]AvailableTerm, error)
 }
+
+type AvailableTerm struct {
+	Val  string `json:"val"`
+	Desc string `json:"desc"`
+}
+
+var ErrInvalidCategory = errors.New("Invalid search category")
 
 type LegacySubmission struct {
 	Id        int

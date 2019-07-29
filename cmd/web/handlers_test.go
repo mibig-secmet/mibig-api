@@ -241,3 +241,79 @@ func TestSearch(t *testing.T) {
 		})
 	}
 }
+
+func TestAvailable(t *testing.T) {
+	_, ts, _ := newTestApp()
+	defer ts.Close()
+
+	tests := []struct {
+		Name             string
+		Category         string
+		Term             string
+		ExpectedStatus   int
+		ExpectedResponse []models.AvailableTerm
+		ExpectedError    *queryError
+	}{
+		{
+			Name:           "existing category",
+			Category:       "type",
+			Term:           "gly",
+			ExpectedStatus: http.StatusOK,
+			ExpectedResponse: []models.AvailableTerm{
+				{Val: "glycopeptide", Desc: "Glycopeptide"},
+			},
+		},
+		{
+			Name:           "missing category",
+			Category:       "foo",
+			Term:           "bar",
+			ExpectedStatus: http.StatusBadRequest,
+			ExpectedError: &queryError{
+				Message: "Invalid search category",
+				Error:   true,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+
+		t.Run(tt.Name, func(t *testing.T) {
+			response, err := ts.Client().Get(ts.URL + "/api/v1/available/" + tt.Category + "/" + tt.Term)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer response.Body.Close()
+
+			if response.StatusCode != tt.ExpectedStatus {
+				t.Errorf("Expected %d, got %d", tt.ExpectedStatus, response.StatusCode)
+			}
+
+			body, err := ioutil.ReadAll(response.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if tt.ExpectedResponse != nil {
+				var parsed []models.AvailableTerm
+				err = json.Unmarshal(body, &parsed)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !cmp.Equal(tt.ExpectedResponse, parsed) {
+					t.Errorf("Unexpected response.\n%s", cmp.Diff(tt.ExpectedResponse, parsed))
+				}
+			}
+
+			if tt.ExpectedError != nil {
+				var parsed queryError
+				err = json.Unmarshal(body, &parsed)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !cmp.Equal(*tt.ExpectedError, parsed) {
+					t.Errorf("Unexpected response.\n%s", cmp.Diff(*tt.ExpectedError, parsed))
+				}
+			}
+		})
+	}
+}

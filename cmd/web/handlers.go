@@ -124,3 +124,18 @@ func (app *application) search(c *gin.Context) {
 
 	c.JSON(http.StatusOK, &result)
 }
+
+func (app *application) available(c *gin.Context) {
+	category := c.Param("category")
+	term := c.Param("term")
+	available, err := app.MibigModel.Available(category, term)
+	if err == models.ErrInvalidCategory {
+		c.JSON(http.StatusBadRequest, queryError{Message: err.Error(), Error: true})
+		return
+	} else if err != nil {
+		app.serverError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, &available)
+}

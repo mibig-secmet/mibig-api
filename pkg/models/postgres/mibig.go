@@ -140,19 +140,19 @@ var categoryDetector = map[string]string{
 	"species":  `SELECT COUNT(tax_id) FROM mibig.taxa WHERE species ILIKE $1`,
 }
 
-func (m *MibigModel) GuessCategory(expression *queries.Expression) (string, error) {
+func (m *MibigModel) GuessCategory(term string) (string, error) {
 
 	for _, category := range []string{"type", "acc", "compound", "genus", "species"} {
 		statement := categoryDetector[category]
 		var count int
-		if err := m.DB.QueryRow(statement, expression.Term).Scan(&count); err != nil {
-			return expression.Category, err
+		if err := m.DB.QueryRow(statement, term).Scan(&count); err != nil {
+			return "", err
 		}
 		if count > 0 {
 			return category, nil
 		}
 	}
-	return expression.Category, nil
+	return "", models.ErrInvalidCategory
 }
 
 var statementByCategory = map[string]string{
@@ -170,7 +170,7 @@ func (m *MibigModel) Search(t queries.QueryTerm) ([]int, error) {
 	switch v := t.(type) {
 	case *queries.Expression:
 		if v.Category == "unknown" {
-			cat, err := m.GuessCategory(v)
+			cat, err := m.GuessCategory(v.Term)
 			if err != nil {
 				return nil, err
 			}
@@ -225,7 +225,7 @@ func (m *MibigModel) Search(t queries.QueryTerm) ([]int, error) {
 }
 
 var availableByCategory = map[string]string{
-	"term":     `SELECT DISTINCT(term), description FROM mibig.bgc_types WHERE term ILIKE concat($1::text, '%') OR description ILIKE concat($1::text, '%') ORDER BY term`,
+	"type":     `SELECT DISTINCT(term), description FROM mibig.bgc_types WHERE term ILIKE concat($1::text, '%') OR description ILIKE concat($1::text, '%') ORDER BY term`,
 	"compound": `SELECT DISTINCT(name), name FROM mibig.compounds WHERE name ILIKE concat($1::text, '%')`,
 }
 

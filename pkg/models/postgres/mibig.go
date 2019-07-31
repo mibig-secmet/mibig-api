@@ -163,6 +163,7 @@ var statementByCategory = map[string]string{
 		SELECT r.bgc_type_id, r.parent_id FROM mibig.bgc_types r INNER JOIN all_subtypes s ON s.bgc_type_id = r.parent_id)
 	SELECT bgc_type_id FROM all_subtypes)`,
 	"compound": `SELECT entry_id FROM mibig.compounds WHERE name ILIKE $1`,
+	"acc":      `SELECT entry_id FROM mibig.entries WHERE acc ILIKE $1`,
 }
 
 func (m *MibigModel) Search(t queries.QueryTerm) ([]int, error) {
@@ -227,6 +228,7 @@ func (m *MibigModel) Search(t queries.QueryTerm) ([]int, error) {
 var availableByCategory = map[string]string{
 	"type":     `SELECT DISTINCT(term), description FROM mibig.bgc_types WHERE term ILIKE concat($1::text, '%') OR description ILIKE concat($1::text, '%') ORDER BY term`,
 	"compound": `SELECT DISTINCT(name), name FROM mibig.compounds WHERE name ILIKE concat($1::text, '%')`,
+	"acc":      `SELECT DISTINCT(acc), acc FROM mibig.entries WHERE acc ILIKE concat('%', $1::text, '%')`,
 }
 
 func (m *MibigModel) Available(category string, term string) ([]models.AvailableTerm, error) {

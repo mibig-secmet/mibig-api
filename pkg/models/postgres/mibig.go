@@ -181,6 +181,7 @@ var statementByCategory = map[string]string{
 	"family":       `SELECT entry_id FROM mibig.entries LEFT JOIN mibig.taxa USING (tax_id) WHERE family ILIKE $1`,
 	"genus":        `SELECT entry_id FROM mibig.entries LEFT JOIN mibig.taxa USING (tax_id) WHERE genus ILIKE $1`,
 	"species":      `SELECT entry_id FROM mibig.entries LEFT JOIN mibig.taxa USING (tax_id) WHERE species ILIKE $1`,
+	"completeness": `SELECT entry_id FROM mibig.entries WHERE data#>>'{cluster, loci, completeness}' ILIKE $1`,
 }
 
 func (m *MibigModel) Search(t queries.QueryTerm) ([]int, error) {
@@ -253,6 +254,7 @@ var availableByCategory = map[string]string{
 	"family":       `SELECT DISTINCT(family), family FROM mibig.taxa WHERE family ILIKE concat('%', $1::text, '%')`,
 	"genus":        `SELECT DISTINCT(genus), genus FROM mibig.taxa WHERE genus ILIKE concat('%', $1::text, '%')`,
 	"species":      `SELECT DISTINCT(species), species FROM mibig.taxa WHERE species ILIKE concat('%', $1::text, '%')`,
+	"completeness": `SELECT DISTINCT(data#>>'{cluster, loci, completeness}'), data#>>'{cluster, loci, completeness}' FROM mibig.entries WHERE data#>>'{cluster, loci, completeness}' ILIKE concat($1::text, '%')`,
 }
 
 func (m *MibigModel) Available(category string, term string) ([]models.AvailableTerm, error) {

@@ -8,6 +8,7 @@ import (
 	"secondarymetabolites.org/mibig-api/pkg/models"
 	"secondarymetabolites.org/mibig-api/pkg/queries"
 	"secondarymetabolites.org/mibig-api/pkg/utils"
+	"strings"
 )
 
 type MibigModel struct {
@@ -182,6 +183,7 @@ var statementByCategory = map[string]string{
 	"genus":        `SELECT entry_id FROM mibig.entries LEFT JOIN mibig.taxa USING (tax_id) WHERE genus ILIKE $1`,
 	"species":      `SELECT entry_id FROM mibig.entries LEFT JOIN mibig.taxa USING (tax_id) WHERE species ILIKE $1`,
 	"completeness": `SELECT entry_id FROM mibig.entries WHERE data#>>'{cluster, loci, completeness}' ILIKE $1`,
+	"minimal":      `SELECT entry_id FROM mibig.entries WHERE data#>>'{cluster, minimal}' ILIKE $1`,
 }
 
 func (m *MibigModel) Search(t queries.QueryTerm) ([]int, error) {
@@ -264,6 +266,11 @@ func (m *MibigModel) Available(category string, term string) ([]models.Available
 		ok        bool
 	)
 
+	if category == "minimal" {
+		description := "Minimal MIBiG entry"
+		return fakeBooleanOptions(term, description)
+	}
+
 	if statement, ok = availableByCategory[category]; !ok {
 		return nil, models.ErrInvalidCategory
 	}
@@ -282,4 +289,20 @@ func (m *MibigModel) Available(category string, term string) ([]models.Available
 		available = append(available, av)
 	}
 	return available, nil
+}
+
+func fakeBooleanOptions(term string, description string) ([]models.AvailableTerm, error) {
+	if strings.HasPrefix("true", term) {
+		return []models.AvailableTerm{{Val: "true", Desc: description}}, nil
+	}
+	if strings.HasPrefix("yes", term) {
+		return []models.AvailableTerm{{Val: "true", Desc: description}}, nil
+	}
+	if strings.HasPrefix("false", term) {
+		return []models.AvailableTerm{{Val: "false", Desc: description}}, nil
+	}
+	if strings.HasPrefix("no", term) {
+		return []models.AvailableTerm{{Val: "false", Desc: description}}, nil
+	}
+	return []models.AvailableTerm{}, nil
 }

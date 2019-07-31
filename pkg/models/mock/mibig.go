@@ -35,6 +35,7 @@ var fakeRepo = []models.RepositoryEntry{
 	models.RepositoryEntry{
 		Accession:    "BGC1234567",
 		Minimal:      false,
+		Complete:     "complete",
 		Products:     []string{"testomycin"},
 		ProductTags:  []models.ProductTag{models.ProductTag{Name: "NRP", Class: "nrps"}},
 		OrganismName: "E. xample",
@@ -48,6 +49,7 @@ func (m *MibigModel) Repository() ([]models.RepositoryEntry, error) {
 var fakeDB = map[int]models.RepositoryEntry{
 	1: models.RepositoryEntry{
 		Accession:    "BGC0000001",
+		Complete:     "incomplete",
 		Minimal:      false,
 		Products:     []string{"testomycin A"},
 		ProductTags:  []models.ProductTag{models.ProductTag{Name: "Lipopeptide", Class: "nrps"}},
@@ -55,6 +57,7 @@ var fakeDB = map[int]models.RepositoryEntry{
 	},
 	23: models.RepositoryEntry{
 		Accession:    "BGC0000023",
+		Complete:     "complete",
 		Minimal:      false,
 		Products:     []string{"testomycin B"},
 		ProductTags:  []models.ProductTag{models.ProductTag{Name: "Lanthipeptide", Class: "ripp"}},
@@ -62,6 +65,7 @@ var fakeDB = map[int]models.RepositoryEntry{
 	},
 	42: models.RepositoryEntry{
 		Accession:    "BGC0000042",
+		Complete:     "Unknown",
 		Minimal:      false,
 		Products:     []string{"testomycin C"},
 		ProductTags:  []models.ProductTag{models.ProductTag{Name: "glycopeptide", Class: "nrps"}},

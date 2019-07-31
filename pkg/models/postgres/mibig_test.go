@@ -97,8 +97,8 @@ func (mt *MibigModelTest) MibigModelClusterStats(t *testing.T) {
 
 func (mt *MibigModelTest) MibigModelRepository(t *testing.T) {
 	expected := []models.RepositoryEntry{
-		{Accession: "BGC0000535", Minimal: false, Products: []string{"nisin A"}, ProductTags: []models.ProductTag{{Name: "Lanthipeptide", Class: "ripp"}}, OrganismName: "Lactococcus lactis subsp. lactis"},
-		{Accession: "BGC0001070", Minimal: false, Products: []string{"kirromycin"}, ProductTags: []models.ProductTag{
+		{Accession: "BGC0000535", Complete: "complete", Minimal: false, Products: []string{"nisin A"}, ProductTags: []models.ProductTag{{Name: "Lanthipeptide", Class: "ripp"}}, OrganismName: "Lactococcus lactis subsp. lactis"},
+		{Accession: "BGC0001070", Complete: "complete", Minimal: false, Products: []string{"kirromycin"}, ProductTags: []models.ProductTag{
 			{Name: "NRP", Class: "nrps"}, {Name: "Modular type I polyketide", Class: "pks"}, {Name: "Trans-AT type I polyketide", Class: "pks"},
 		}, OrganismName: "Streptomyces collinus Tu 365"},
 	}
@@ -121,11 +121,11 @@ func (mt *MibigModelTest) MibigModelGet(t *testing.T) {
 		ExpectedError  error
 	}{
 		{Name: "One", Ids: []int{535}, ExpectedResult: []models.RepositoryEntry{
-			{Accession: "BGC0000535", Minimal: false, Products: []string{"nisin A"}, ProductTags: []models.ProductTag{{Name: "Lanthipeptide", Class: "ripp"}}, OrganismName: "Lactococcus lactis subsp. lactis"},
+			{Accession: "BGC0000535", Complete: "complete", Minimal: false, Products: []string{"nisin A"}, ProductTags: []models.ProductTag{{Name: "Lanthipeptide", Class: "ripp"}}, OrganismName: "Lactococcus lactis subsp. lactis"},
 		}, ExpectedError: nil},
 		{Name: "Two", Ids: []int{535, 1070}, ExpectedResult: []models.RepositoryEntry{
-			{Accession: "BGC0000535", Minimal: false, Products: []string{"nisin A"}, ProductTags: []models.ProductTag{{Name: "Lanthipeptide", Class: "ripp"}}, OrganismName: "Lactococcus lactis subsp. lactis"},
-			{Accession: "BGC0001070", Minimal: false, Products: []string{"kirromycin"}, ProductTags: []models.ProductTag{
+			{Accession: "BGC0000535", Complete: "complete", Minimal: false, Products: []string{"nisin A"}, ProductTags: []models.ProductTag{{Name: "Lanthipeptide", Class: "ripp"}}, OrganismName: "Lactococcus lactis subsp. lactis"},
+			{Accession: "BGC0001070", Complete: "complete", Minimal: false, Products: []string{"kirromycin"}, ProductTags: []models.ProductTag{
 				{Name: "NRP", Class: "nrps"}, {Name: "Modular type I polyketide", Class: "pks"}, {Name: "Trans-AT type I polyketide", Class: "pks"},
 			}, OrganismName: "Streptomyces collinus Tu 365"},
 		}, ExpectedError: nil},

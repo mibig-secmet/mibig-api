@@ -36,6 +36,7 @@ type CompoundList []Compound
 type RepositoryEntry struct {
 	Accession    string       `json:"accession"`
 	Minimal      bool         `json:"minimal"`
+	Complete     string       `json:"complete"`
 	Products     []string     `json:"products"`
 	ProductTags  []ProductTag `json:"classes"`
 	OrganismName string       `json:"organism"`

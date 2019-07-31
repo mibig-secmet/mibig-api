@@ -58,6 +58,7 @@ func (m *MibigModel) Repository() ([]models.RepositoryEntry, error) {
 	statement := `SELECT
 		a.acc,
 		a.data#>>'{cluster, minimal}' AS minimal,
+		a.data#>>'{cluster, loci, completeness}' AS complete,
 		a.data#>>'{cluster, compounds}' AS compounds,
 		array_agg(b.name) AS biosyn_class,
 		array_agg(b.safe_class) AS safe_class,
@@ -85,10 +86,18 @@ func parseRepositoryEntriesFromDB(rows *sql.Rows) ([]models.RepositoryEntry, err
 		var css_classes []string
 		var compounds models.CompoundList
 		var compounds_raw string
+		var maybe_completeness sql.NullString
 
 		entry := models.RepositoryEntry{}
-		if err := rows.Scan(&entry.Accession, &entry.Minimal, &compounds_raw, pq.Array(&classes), pq.Array(&css_classes), &entry.OrganismName); err != nil {
+		if err := rows.Scan(&entry.Accession, &entry.Minimal, &maybe_completeness, &compounds_raw,
+			pq.Array(&classes), pq.Array(&css_classes), &entry.OrganismName); err != nil {
 			return nil, err
+		}
+
+		if maybe_completeness.Valid {
+			entry.Complete = maybe_completeness.String
+		} else {
+			entry.Complete = "Unknown"
 		}
 
 		if err := json.Unmarshal([]byte(compounds_raw), &compounds); err != nil {
@@ -112,6 +121,7 @@ func (m *MibigModel) Get(ids []int) ([]models.RepositoryEntry, error) {
 	statement := `SELECT
 		a.acc,
 		a.data#>>'{cluster, minimal}' AS minimal,
+		a.data#>>'{cluster, loci, completeness}' AS complete,
 		a.data#>>'{cluster, compounds}' AS compounds,
 		array_agg(b.name) AS biosyn_class,
 		array_agg(b.safe_class) AS safe_class,

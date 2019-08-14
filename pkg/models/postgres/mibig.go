@@ -308,3 +308,55 @@ func fakeBooleanOptions(term string, description string) ([]models.AvailableTerm
 	}
 	return []models.AvailableTerm{}, nil
 }
+
+func (m *MibigModel) ResultStats(ids []int) (*models.ResultStats, error) {
+	var stats models.ResultStats
+	var err error
+
+	cluster_by_type_search := `SELECT
+	jsonb_array_elements_text(a.data#>'{cluster, biosyn_class}') AS biosyn_class, COUNT(1) AS class_count
+	FROM ( SELECT * FROM unnest($1::int[]) AS entry_id) vals
+	JOIN mibig.entries a USING (entry_id)
+	GROUP BY biosyn_class`
+
+	cluster_by_phylum_search := `SELECT
+	phylum, COUNT(phylum)
+	FROM ( SELECT * FROM unnest($1::int[]) AS entry_id) vals
+	JOIN mibig.entries USING (entry_id)
+	JOIN mibig.taxa USING (tax_id)
+	GROUP BY phylum`
+
+	stats.ClustersByType, err = m.labelsAndCounts(cluster_by_type_search, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	stats.ClustersByPhylun, err = m.labelsAndCounts(cluster_by_phylum_search, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	return &stats, nil
+}
+
+func (m *MibigModel) labelsAndCounts(statement string, ids []int) (*models.LabelsAndCounts, error) {
+	var lc models.LabelsAndCounts
+
+	rows, err := m.DB.Query(statement, pq.Array(ids))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var label string
+		var count int
+		err = rows.Scan(&label, &count)
+		if err != nil {
+			return nil, err
+		}
+		lc.Labels = append(lc.Labels, label)
+		lc.Data = append(lc.Data, count)
+	}
+	return &lc, nil
+}

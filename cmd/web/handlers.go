@@ -71,7 +71,7 @@ type queryResult struct {
 	Clusters []models.RepositoryEntry `json:"clusters"`
 	Offset   int                      `json:"offset"`
 	Paginate int                      `json:"paginate"`
-	Stats    string                   `json:"stats"`
+	Stats    *models.ResultStats      `json:"stats"`
 }
 
 type queryError struct {
@@ -114,12 +114,18 @@ func (app *application) search(c *gin.Context) {
 		return
 	}
 
+	stats, err := app.MibigModel.ResultStats(entry_ids)
+	if err != nil {
+		app.serverError(c, err)
+		return
+	}
+
 	result := queryResult{
 		Total:    len(entry_ids),
 		Clusters: clusters,
 		Offset:   qc.Offset,
 		Paginate: qc.Paginate,
-		Stats:    "Implement me",
+		Stats:    stats,
 	}
 
 	c.JSON(http.StatusOK, &result)

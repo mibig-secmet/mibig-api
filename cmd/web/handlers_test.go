@@ -177,7 +177,7 @@ func TestSearch(t *testing.T) {
 				Clusters: fake_clusters,
 				Offset:   0,
 				Paginate: 0,
-				Stats:    "Implement me",
+				Stats:    nil,
 			},
 		},
 		{

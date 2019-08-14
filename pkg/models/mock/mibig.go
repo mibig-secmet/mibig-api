@@ -99,3 +99,7 @@ func (m *MibigModel) Available(category string, term string) ([]models.Available
 	}
 	return res, nil
 }
+
+func (m *MibigModel) ResultStats(ids []int) (*models.ResultStats, error) {
+	return nil, nil
+}

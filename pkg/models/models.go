@@ -42,6 +42,16 @@ type RepositoryEntry struct {
 	OrganismName string       `json:"organism"`
 }
 
+type LabelsAndCounts struct {
+	Labels []string `json:"labels"`
+	Data   []int    `json:"data"`
+}
+
+type ResultStats struct {
+	ClustersByType   *LabelsAndCounts `json:"clusters_by_type"`
+	ClustersByPhylun *LabelsAndCounts `json:"clusters_by_phylun"`
+}
+
 type AccessionRequestLocus struct {
 	GenBankAccession string `json:"genbank_accession"`
 	Start            int    `json:"start"`
@@ -62,6 +72,7 @@ type MibigModel interface {
 	Search(t queries.QueryTerm) ([]int, error)
 	Get(ids []int) ([]RepositoryEntry, error)
 	Available(category string, term string) ([]AvailableTerm, error)
+	ResultStats(ids []int) (*ResultStats, error)
 }
 
 type AvailableTerm struct {

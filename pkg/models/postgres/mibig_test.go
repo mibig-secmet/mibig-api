@@ -58,7 +58,7 @@ func TestMibigModel(t *testing.T) {
 	mt := newTestDB(t)
 	defer mt.Teardown()
 
-	t.Run("Count", mt.MibigModelCount)
+	t.Run("Counts", mt.MibigModelCounts)
 	t.Run("ClusterStats", mt.MibigModelClusterStats)
 	t.Run("Repository", mt.MibigModelRepository)
 	t.Run("Get", mt.MibigModelGet)
@@ -67,14 +67,14 @@ func TestMibigModel(t *testing.T) {
 
 }
 
-func (mt *MibigModelTest) MibigModelCount(t *testing.T) {
-	count, err := mt.m.Count()
+func (mt *MibigModelTest) MibigModelCounts(t *testing.T) {
+	counts, err := mt.m.Counts()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if count != 2 {
-		t.Errorf("want 2, got %d", count)
+	if counts.Total != 2 {
+		t.Errorf("want 2, got %d", counts.Total)
 	}
 }
 

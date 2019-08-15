@@ -22,6 +22,13 @@ type StatCluster struct {
 	Class       string `json:"css_class"`
 }
 
+type StatCounts struct {
+	Total      int `json:"total"`
+	Minimal    int `json:"minimal"`
+	Complete   int `json:"complete"`
+	Incomplete int `json:"incomplete"`
+}
+
 type ProductTag struct {
 	Name  string `json:"name"`
 	Class string `json:"css_class"`
@@ -66,7 +73,7 @@ type AccessionRequest struct {
 }
 
 type MibigModel interface {
-	Count() (int, error)
+	Counts() (*StatCounts, error)
 	ClusterStats() ([]StatCluster, error)
 	Repository() ([]RepositoryEntry, error)
 	Search(t queries.QueryTerm) ([]int, error)

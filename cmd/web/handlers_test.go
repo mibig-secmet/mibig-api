@@ -118,8 +118,8 @@ func TestStats(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if stats.NumRecords != 23 {
-		t.Errorf("Expected %d, got %d", 23, stats.NumRecords)
+	if stats.Counts.Total != 23 {
+		t.Errorf("Expected %d, got %d", 23, stats.Counts.Total)
 	}
 
 	if len(stats.Clusters) != 2 {

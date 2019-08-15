@@ -15,16 +15,34 @@ type MibigModel struct {
 	DB *sql.DB
 }
 
-func (m *MibigModel) Count() (int, error) {
-	statement := `SELECT COUNT(entry_id) FROM mibig.entries`
-	var count int
+func (m *MibigModel) Counts() (*models.StatCounts, error) {
+	stmt_total := `SELECT COUNT(entry_id) FROM mibig.entries`
+	stmt_minimal := `SELECT COUNT(entry_id) FROM mibig.entries WHERE data#>>'{cluster, minimal}' ILIKE 'true'`
+	stmt_complete := `SELECT COUNT(entry_id) FROM mibig.entries WHERE data#>>'{cluster, loci, completeness}' ILIKE 'complete'`
+	stmt_incomplete := `SELECT COUNT(entry_id) FROM mibig.entries WHERE data#>>'{cluster, loci, completeness}' ILIKE 'incomplete'`
+	var counts models.StatCounts
 
-	err := m.DB.QueryRow(statement).Scan(&count)
+	err := m.DB.QueryRow(stmt_total).Scan(&counts.Total)
 	if err != nil {
-		return -1, err
+		return nil, err
 	}
 
-	return count, nil
+	err = m.DB.QueryRow(stmt_minimal).Scan(&counts.Minimal)
+	if err != nil {
+		return nil, err
+	}
+
+	err = m.DB.QueryRow(stmt_complete).Scan(&counts.Complete)
+	if err != nil {
+		return nil, err
+	}
+
+	err = m.DB.QueryRow(stmt_incomplete).Scan(&counts.Incomplete)
+	if err != nil {
+		return nil, err
+	}
+
+	return &counts, nil
 }
 
 func (m *MibigModel) ClusterStats() ([]models.StatCluster, error) {

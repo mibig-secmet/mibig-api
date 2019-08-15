@@ -23,12 +23,12 @@ func (app *application) version(c *gin.Context) {
 }
 
 type Stats struct {
-	NumRecords int                  `json:"num_records"`
-	Clusters   []models.StatCluster `json:"clusters"`
+	Counts   *models.StatCounts   `json:"counts"`
+	Clusters []models.StatCluster `json:"clusters"`
 }
 
 func (app *application) stats(c *gin.Context) {
-	count, err := app.MibigModel.Count()
+	counts, err := app.MibigModel.Counts()
 	if err != nil {
 		app.serverError(c, err)
 		return
@@ -41,8 +41,8 @@ func (app *application) stats(c *gin.Context) {
 	}
 
 	stat_info := Stats{
-		NumRecords: count,
-		Clusters:   clusters,
+		Counts:   counts,
+		Clusters: clusters,
 	}
 
 	c.JSON(http.StatusOK, &stat_info)

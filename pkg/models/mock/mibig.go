@@ -8,8 +8,8 @@ import (
 type MibigModel struct {
 }
 
-func (m *MibigModel) Count() (int, error) {
-	return 23, nil
+func (m *MibigModel) Counts() (*models.StatCounts, error) {
+	return &models.StatCounts{Total: 23}, nil
 }
 
 var fakeStats = []models.StatCluster{

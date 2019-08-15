@@ -23,8 +23,9 @@ func (app *application) version(c *gin.Context) {
 }
 
 type Stats struct {
-	Counts   *models.StatCounts   `json:"counts"`
-	Clusters []models.StatCluster `json:"clusters"`
+	Counts     *models.StatCounts   `json:"counts"`
+	Clusters   []models.StatCluster `json:"clusters"`
+	TaxonStats []models.TaxonStats  `json:"taxon_stats"`
 }
 
 func (app *application) stats(c *gin.Context) {
@@ -40,9 +41,16 @@ func (app *application) stats(c *gin.Context) {
 		return
 	}
 
+	taxon_stats, err := app.MibigModel.GenusStats()
+	if err != nil {
+		app.serverError(c, err)
+		return
+	}
+
 	stat_info := Stats{
-		Counts:   counts,
-		Clusters: clusters,
+		Counts:     counts,
+		Clusters:   clusters,
+		TaxonStats: taxon_stats,
 	}
 
 	c.JSON(http.StatusOK, &stat_info)

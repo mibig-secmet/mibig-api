@@ -31,6 +31,10 @@ func (m *MibigModel) ClusterStats() ([]models.StatCluster, error) {
 	return fakeStats, nil
 }
 
+func (m *MibigModel) GenusStats() ([]models.TaxonStats, error) {
+	return nil, nil
+}
+
 var fakeRepo = []models.RepositoryEntry{
 	models.RepositoryEntry{
 		Accession:    "BGC1234567",

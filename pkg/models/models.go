@@ -29,6 +29,11 @@ type StatCounts struct {
 	Incomplete int `json:"incomplete"`
 }
 
+type TaxonStats struct {
+	Genus string `json:"genus"`
+	Count int    `json:"count"`
+}
+
 type ProductTag struct {
 	Name  string `json:"name"`
 	Class string `json:"css_class"`
@@ -75,6 +80,7 @@ type AccessionRequest struct {
 type MibigModel interface {
 	Counts() (*StatCounts, error)
 	ClusterStats() ([]StatCluster, error)
+	GenusStats() ([]TaxonStats, error)
 	Repository() ([]RepositoryEntry, error)
 	Search(t queries.QueryTerm) ([]int, error)
 	Get(ids []int) ([]RepositoryEntry, error)

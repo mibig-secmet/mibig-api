@@ -73,6 +73,27 @@ func (m *MibigModel) ClusterStats() ([]models.StatCluster, error) {
 	return clusters, nil
 }
 
+func (m *MibigModel) GenusStats() ([]models.TaxonStats, error) {
+	statement := `SELECT genus, COUNT(genus) AS ct FROM mibig.entries LEFT JOIN mibig.taxa USING (tax_id) GROUP BY genus ORDER BY ct DESC, genus`
+	var stats []models.TaxonStats
+
+	rows, err := m.DB.Query(statement)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		stat := models.TaxonStats{}
+		if err = rows.Scan(&stat.Genus, &stat.Count); err != nil {
+			return nil, err
+		}
+		stats = append(stats, stat)
+	}
+
+	return stats, nil
+}
+
 func (m *MibigModel) Repository() ([]models.RepositoryEntry, error) {
 	statement := `SELECT
 		a.acc,

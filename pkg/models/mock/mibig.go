@@ -107,3 +107,7 @@ func (m *MibigModel) Available(category string, term string) ([]models.Available
 func (m *MibigModel) ResultStats(ids []int) (*models.ResultStats, error) {
 	return nil, nil
 }
+
+func (m *MibigModel) GuessCategories(query *queries.Query) error {
+	return nil
+}

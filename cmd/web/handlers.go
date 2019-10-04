@@ -153,3 +153,30 @@ func (app *application) available(c *gin.Context) {
 
 	c.JSON(http.StatusOK, &available)
 }
+
+func (app *application) Convert(c *gin.Context) {
+	var req struct {
+		Search string `form:"search_string"`
+	}
+	if err := c.Bind(&req); err != nil {
+		c.JSON(http.StatusBadRequest, queryError{Message: err.Error(), Error: true})
+		return
+	}
+
+	query, err := queries.NewQueryFromString(req.Search)
+	if err != nil {
+		app.serverError(c, err)
+		return
+	}
+
+	err = app.MibigModel.GuessCategories(query)
+	if err == models.ErrInvalidCategory {
+		c.JSON(http.StatusBadRequest, queryError{Message: err.Error(), Error: true})
+		return
+	} else if err != nil {
+		app.serverError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, query)
+}

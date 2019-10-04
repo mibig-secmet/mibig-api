@@ -190,7 +190,7 @@ var categoryDetector = map[string]string{
 	"species":  `SELECT COUNT(tax_id) FROM mibig.taxa WHERE species ILIKE $1`,
 }
 
-func (m *MibigModel) GuessCategory(term string) (string, error) {
+func (m *MibigModel) guessCategory(term string) (string, error) {
 
 	for _, category := range []string{"type", "acc", "compound", "genus", "species"} {
 		statement := categoryDetector[category]
@@ -232,7 +232,7 @@ func (m *MibigModel) Search(t queries.QueryTerm) ([]int, error) {
 	switch v := t.(type) {
 	case *queries.Expression:
 		if v.Category == "unknown" {
-			cat, err := m.GuessCategory(v.Term)
+			cat, err := m.guessCategory(v.Term)
 			if err != nil {
 				return nil, err
 			}
@@ -400,4 +400,29 @@ func (m *MibigModel) labelsAndCounts(statement string, ids []int) (*models.Label
 		lc.Data = append(lc.Data, count)
 	}
 	return &lc, nil
+}
+
+func (m *MibigModel) GuessCategories(query *queries.Query) error {
+	return m.recursiveGuessCategories(query.Terms)
+}
+
+func (m *MibigModel) recursiveGuessCategories(term queries.QueryTerm) error {
+	switch v := term.(type) {
+	case *queries.Expression:
+		if v.Category == "unknown" {
+			cat, err := m.guessCategory(v.Term)
+			if err != nil {
+				return err
+			}
+			v.Category = cat
+		}
+	case *queries.Operation:
+		if err := m.recursiveGuessCategories(v.Left); err != nil {
+			return err
+		}
+		if err := m.recursiveGuessCategories(v.Right); err != nil {
+			return err
+		}
+	}
+	return nil
 }

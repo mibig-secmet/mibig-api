@@ -86,6 +86,7 @@ type MibigModel interface {
 	Get(ids []int) ([]RepositoryEntry, error)
 	Available(category string, term string) ([]AvailableTerm, error)
 	ResultStats(ids []int) (*ResultStats, error)
+	GuessCategories(query *queries.Query) error
 }
 
 type AvailableTerm struct {

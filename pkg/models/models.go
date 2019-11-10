@@ -87,6 +87,7 @@ type MibigModel interface {
 	Available(category string, term string) ([]AvailableTerm, error)
 	ResultStats(ids []int) (*ResultStats, error)
 	GuessCategories(query *queries.Query) error
+	LookupContributors(ids []string) ([]Contributor, error)
 }
 
 type AvailableTerm struct {
@@ -126,4 +127,11 @@ type LecagyModel interface {
 	CreateSubmission(submission *LegacySubmission) error
 	CreateGeneSubmission(submission *LegacyGeneSubmission) error
 	CreateNrpsSubmission(submission *LegacyNrpsSubmission) error
+}
+
+type Contributor struct {
+	Id           string `json:"id"`
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	Organisation string `json:"organisation"`
 }

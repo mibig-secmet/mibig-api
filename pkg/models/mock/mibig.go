@@ -111,3 +111,7 @@ func (m *MibigModel) ResultStats(ids []int) (*models.ResultStats, error) {
 func (m *MibigModel) GuessCategories(query *queries.Query) error {
 	return nil
 }
+
+func (m *MibigModel) LookupContributors(ids []string) ([]models.Contributor, error) {
+	return nil, nil
+}

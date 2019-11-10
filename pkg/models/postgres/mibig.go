@@ -426,3 +426,28 @@ func (m *MibigModel) recursiveGuessCategories(term queries.QueryTerm) error {
 	}
 	return nil
 }
+
+func (m *MibigModel) LookupContributors(ids []string) ([]models.Contributor, error) {
+	statement := `SELECT a.user_id, name, email, institution
+	FROM ( SELECT * FROM unnest($1::text[]) AS user_id) vals
+	JOIN mibig_submitters.submitters a USING (user_id)
+	WHERE is_public = TRUE AND gdpr_consent = TRUE;
+	`
+	rows, err := m.DB.Query(statement, pq.Array(ids))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var contributors []models.Contributor
+
+	for rows.Next() {
+		contributor := models.Contributor{}
+		err = rows.Scan(&contributor.Id, &contributor.Name, &contributor.Email, &contributor.Organisation)
+		if err != nil {
+			return nil, err
+		}
+		contributors = append(contributors, contributor)
+	}
+	return contributors, nil
+}

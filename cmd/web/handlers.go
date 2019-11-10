@@ -180,3 +180,21 @@ func (app *application) Convert(c *gin.Context) {
 
 	c.JSON(http.StatusOK, query)
 }
+
+func (app *application) Contributors(c *gin.Context) {
+	var req struct {
+		Ids []string `form:"ids[]"`
+	}
+	if err := c.Bind(&req); err != nil {
+		c.JSON(http.StatusBadRequest, queryError{Message: err.Error(), Error: true})
+		return
+	}
+
+	contributors, err := app.MibigModel.LookupContributors(req.Ids)
+	if err != nil {
+		app.serverError(c, err)
+		return
+	}
+
+	c.JSON(220, contributors)
+}

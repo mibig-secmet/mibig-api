@@ -13,6 +13,7 @@ func (app *application) routes() *gin.Engine {
 			v1.POST("/search", app.search)
 			v1.GET("/available/:category/:term", app.available)
 			v1.GET("/convert", app.Convert)
+			v1.GET("/contributors", app.Contributors)
 
 			v1.POST("/submit", app.submit)
 			v1.POST("/bgc-registration", app.LegacyStoreSubmission)

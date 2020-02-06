@@ -1,8 +1,11 @@
-package main
+package web
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
+
 	"secondarymetabolites.org/mibig-api/pkg/models"
 	"secondarymetabolites.org/mibig-api/pkg/queries"
 )
@@ -16,8 +19,8 @@ type VersionInfo struct {
 func (app *application) version(c *gin.Context) {
 	version_info := VersionInfo{
 		Api:        "3.0",
-		BuildTime:  app.BuildTime,
-		GitVersion: app.GitVersion,
+		BuildTime:  viper.GetString("buildTime"),
+		GitVersion: viper.GetString("gitVer"),
 	}
 	c.JSON(http.StatusOK, &version_info)
 }

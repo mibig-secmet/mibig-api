@@ -1,18 +1,21 @@
-package main
+package web
 
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/gin-gonic/gin"
-	"github.com/google/go-cmp/cmp"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/smtp"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/go-cmp/cmp"
+	"github.com/spf13/viper"
+
 	"secondarymetabolites.org/mibig-api/pkg/models"
 	"secondarymetabolites.org/mibig-api/pkg/models/mock"
 	"secondarymetabolites.org/mibig-api/pkg/queries"
-	"testing"
 )
 
 type emailRecorder struct {
@@ -46,11 +49,12 @@ func newTestApp() (*application, *httptest.Server, *emailRecorder) {
 	sender := models.NewSender(conf, mail_func)
 	mux := setupMux(true, logger.Desugar())
 
+	viper.Set("buildTime", "Fake time")
+	viper.Set("gitVer", "deadbeef")
+
 	app := &application{
 		logger:      logger,
 		Mail:        sender,
-		BuildTime:   "Fake time",
-		GitVersion:  "deadbeef",
 		MibigModel:  &mock.MibigModel{},
 		LegacyModel: &mock.LegacyModel{},
 		Mux:         mux,
@@ -66,7 +70,7 @@ func newTestApp() (*application, *httptest.Server, *emailRecorder) {
 }
 
 func TestVersion(t *testing.T) {
-	app, ts, _ := newTestApp()
+	_, ts, _ := newTestApp()
 	defer ts.Close()
 
 	response, err := ts.Client().Get(ts.URL + "/api/v1/version")
@@ -89,8 +93,8 @@ func TestVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if version.GitVersion != app.GitVersion {
-		t.Errorf("Expected %s, got %s", app.GitVersion, version.GitVersion)
+	if version.GitVersion != viper.GetString("gitVer") {
+		t.Errorf("Expected %s, got %s", viper.GetString("gitVer"), version.GitVersion)
 	}
 }
 

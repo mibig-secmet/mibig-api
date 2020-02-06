@@ -9,7 +9,7 @@ type MailConfig struct {
 	Username  string
 	Password  string
 	Host      string
-	Port      int64
+	Port      int
 	Recipient string
 }
 

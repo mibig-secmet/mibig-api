@@ -113,5 +113,18 @@ func (m *MibigModel) GuessCategories(query *queries.Query) error {
 }
 
 func (m *MibigModel) LookupContributors(ids []string) ([]models.Contributor, error) {
-	return nil, nil
+	var contributors []models.Contributor
+
+	for _, id := range ids {
+		if id == "AAAAAAAAAAAAAAAAAAAAAAAA" {
+			contributor := models.Contributor{
+				Id:           id,
+				Name:         "MIBiG Submitters",
+				Email:        "mibig@example.com",
+				Organisation: "MIBiG",
+			}
+			contributors = append(contributors, contributor)
+		}
+	}
+	return contributors, nil
 }

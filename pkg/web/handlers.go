@@ -199,5 +199,5 @@ func (app *application) Contributors(c *gin.Context) {
 		return
 	}
 
-	c.JSON(220, contributors)
+	c.JSON(http.StatusOK, contributors)
 }

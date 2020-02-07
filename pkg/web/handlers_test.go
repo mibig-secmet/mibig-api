@@ -321,3 +321,31 @@ func TestAvailable(t *testing.T) {
 		})
 	}
 }
+
+func TestContributors(t *testing.T) {
+	_, ts, _ := newTestApp()
+	defer ts.Close()
+
+	response, err := ts.Client().Get(ts.URL + "/api/v1/contributors?ids%5B%5D=AAAAAAAAAAAAAAAAAAAAAAAA")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if response.StatusCode != http.StatusOK {
+		t.Errorf("Expected %d, got %d", http.StatusOK, response.StatusCode)
+	}
+
+	var contributors []models.Contributor
+	if err := json.Unmarshal(body, &contributors); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(contributors) != 1 {
+		t.Errorf("Expected repository of length %d, got %d: %v", 1, len(contributors), contributors)
+	}
+}

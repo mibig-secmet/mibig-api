@@ -2,7 +2,7 @@ package utils
 
 import "sort"
 
-func Intersect(a []int, b []int) []int {
+func IntersectInt(a []int, b []int) []int {
 	hash := make(map[int]bool)
 	res := make([]int, 0)
 
@@ -18,7 +18,7 @@ func Intersect(a []int, b []int) []int {
 	return res
 }
 
-func Union(a []int, b []int) []int {
+func UnionInt(a []int, b []int) []int {
 	hash := make(map[int]bool)
 	res := make([]int, 0)
 
@@ -36,7 +36,7 @@ func Union(a []int, b []int) []int {
 	return res
 }
 
-func Difference(a []int, b []int) []int {
+func DifferenceInt(a []int, b []int) []int {
 	hash := make(map[int]bool)
 	res := make([]int, 0)
 

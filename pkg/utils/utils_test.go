@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestIntersect(t *testing.T) {
+func TestIntersectInt(t *testing.T) {
 	var tests = []struct {
 		a        []int
 		b        []int
@@ -15,14 +15,14 @@ func TestIntersect(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		actual := Intersect(tt.a, tt.b)
+		actual := IntersectInt(tt.a, tt.b)
 		if !cmp.Equal(actual, tt.expected) {
-			t.Errorf("Intersect(%v, %v): expected %v, got %v", tt.a, tt.b, tt.expected, actual)
+			t.Errorf("IntersectInt(%v, %v): expected %v, got %v", tt.a, tt.b, tt.expected, actual)
 		}
 	}
 }
 
-func TestUnion(t *testing.T) {
+func TestUnionInt(t *testing.T) {
 	var tests = []struct {
 		a        []int
 		b        []int
@@ -32,14 +32,14 @@ func TestUnion(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		actual := Union(tt.a, tt.b)
+		actual := UnionInt(tt.a, tt.b)
 		if !cmp.Equal(actual, tt.expected) {
-			t.Errorf("Union(%v, %v): expected %v, got %v", tt.a, tt.b, tt.expected, actual)
+			t.Errorf("UnionInt(%v, %v): expected %v, got %v", tt.a, tt.b, tt.expected, actual)
 		}
 	}
 }
 
-func TestDifference(t *testing.T) {
+func TestDifferenceInt(t *testing.T) {
 	var tests = []struct {
 		a        []int
 		b        []int
@@ -49,9 +49,9 @@ func TestDifference(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		actual := Difference(tt.a, tt.b)
+		actual := DifferenceInt(tt.a, tt.b)
 		if !cmp.Equal(actual, tt.expected) {
-			t.Errorf("Union(%v, %v): expected %v, got %v", tt.a, tt.b, tt.expected, actual)
+			t.Errorf("DifferenceInt(%v, %v): expected %v, got %v", tt.a, tt.b, tt.expected, actual)
 		}
 	}
 }

@@ -1,53 +1,22 @@
 package utils
 
-import "sort"
+import (
+	"crypto/rand"
+	"encoding/base32"
 
-func IntersectInt(a []int, b []int) []int {
-	hash := make(map[int]bool)
-	res := make([]int, 0)
+	"golang.org/x/crypto/bcrypt"
+)
 
-	for _, i := range a {
-		hash[i] = true
+func GenerateUid(length int) (string, error) {
+	token_bytes := make([]byte, length)
+	_, err := rand.Read(token_bytes)
+	if err != nil {
+		return "", err
 	}
-
-	for _, i := range b {
-		if _, ok := hash[i]; ok {
-			res = append(res, i)
-		}
-	}
-	return res
+	token := base32.StdEncoding.EncodeToString(token_bytes)
+	return token, nil
 }
 
-func UnionInt(a []int, b []int) []int {
-	hash := make(map[int]bool)
-	res := make([]int, 0)
-
-	for _, i := range a {
-		hash[i] = true
-	}
-	for _, i := range b {
-		hash[i] = true
-	}
-
-	for key := range hash {
-		res = append(res, key)
-	}
-	sort.Ints(res)
-	return res
-}
-
-func DifferenceInt(a []int, b []int) []int {
-	hash := make(map[int]bool)
-	res := make([]int, 0)
-
-	for _, i := range b {
-		hash[i] = true
-	}
-
-	for _, i := range a {
-		if _, ok := hash[i]; !ok {
-			res = append(res, i)
-		}
-	}
-	return res
+func GeneratePassword(password string) ([]byte, error) {
+	return bcrypt.GenerateFromPassword([]byte(password), 12)
 }

@@ -186,3 +186,9 @@ func RolesToStrings(roles []Role) []string {
 	}
 	return roleNames
 }
+
+type Token struct {
+	Token   string
+	UserId  int
+	Expires time.Time
+}

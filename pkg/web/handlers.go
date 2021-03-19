@@ -1,8 +1,11 @@
 package web
 
 import (
+	"errors"
 	"net/http"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 
@@ -200,4 +203,63 @@ func (app *application) Contributors(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, contributors)
+}
+
+type loginData struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func (app *application) Login(c *gin.Context) {
+	login := loginData{}
+	err := c.BindJSON(&login)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	user, err := app.SubmitterModel.Authenticate(login.Email, login.Password)
+	if err != nil {
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		} else {
+			app.logger.Error(err.Error())
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+	}
+
+	expirationTime := time.Now().Add(2 * time.Hour)
+
+	claims := &Claims{
+		Name:  user.Name,
+		Email: user.Email,
+		Roles: models.RolesToStrings(user.Roles),
+		StandardClaims: jwt.StandardClaims{
+			Subject:   user.Id,
+			ExpiresAt: expirationTime.Unix(),
+			IssuedAt:  time.Now().Unix(),
+			Issuer:    viper.GetString("server.name"),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte(viper.GetString("server.secret")))
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"token": tokenString, "call_name": user.CallName})
+}
+
+func (app *application) Logout(c *gin.Context) {
+	c.SetCookie("token", "", -1, "/", viper.GetString("server.name"), false, true)
+	c.AbortWithStatus(http.StatusNoContent)
+}
+
+func (app *application) AuthTest(c *gin.Context) {
+	claims := c.MustGet("claims").(*Claims)
+	c.String(http.StatusOK, "Hello %s!", claims.Name)
 }

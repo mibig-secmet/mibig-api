@@ -18,11 +18,12 @@ import (
 )
 
 type application struct {
-	logger      *zap.SugaredLogger
-	MibigModel  models.MibigModel
-	LegacyModel models.LecagyModel
-	Mail        models.EmailSender
-	Mux         *gin.Engine
+	logger         *zap.SugaredLogger
+	MibigModel     models.MibigModel
+	LegacyModel    models.LecagyModel
+	SubmitterModel models.SubmitterModel
+	Mail           models.EmailSender
+	Mux            *gin.Engine
 }
 
 func Run(debug bool) {
@@ -57,11 +58,12 @@ func Run(debug bool) {
 	mux := setupMux(debug, logger.Desugar())
 
 	app := &application{
-		logger:      logger,
-		MibigModel:  &postgres.MibigModel{DB: db},
-		LegacyModel: &postgres.LegacyModel{DB: legacy_db},
-		Mail:        mailSender,
-		Mux:         mux,
+		logger:         logger,
+		MibigModel:     &postgres.MibigModel{DB: db},
+		LegacyModel:    &postgres.LegacyModel{DB: legacy_db},
+		SubmitterModel: postgres.NewSubmitterModel(db),
+		Mail:           mailSender,
+		Mux:            mux,
 	}
 
 	mux = app.routes()

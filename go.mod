@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/gin-contrib/zap v0.0.0-20190528085758-3cc18cd8fce3
 	github.com/gin-gonic/gin v1.4.0

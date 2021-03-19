@@ -95,7 +95,12 @@ type AvailableTerm struct {
 	Desc string `json:"desc"`
 }
 
-var ErrInvalidCategory = errors.New("Invalid search category")
+var (
+	ErrInvalidCategory    = errors.New("Invalid search category")
+	ErrInvalidCredentials = errors.New("models: invalid credentials")
+	ErrDuplicateEmail     = errors.New("models: duplicate email address")
+	ErrNoCredentails      = errors.New("No credentials found")
+)
 
 type LegacySubmission struct {
 	Id        int
@@ -134,4 +139,50 @@ type Contributor struct {
 	Name         string `json:"name"`
 	Email        string `json:"email"`
 	Organisation string `json:"organisation"`
+}
+
+type SubmitterModel interface {
+	Ping() error
+	Insert(submitter *Submitter, password string) error
+	GetRolesById(role_ids []int64) ([]Role, error)
+	GetRolesByName(role_names []string) ([]Role, error)
+	Get(email string, active_only bool) (*Submitter, error)
+	Authenticate(email, password string) (*Submitter, error)
+	ChangePassword(userId string, password string) error
+	Update(submitter *Submitter, password string) error
+	List() ([]Submitter, error)
+	Delete(email string) error
+}
+
+type RoleModel interface {
+	Ping() error
+	List() ([]Role, error)
+	UserCount(name string) (int, error)
+}
+
+type Submitter struct {
+	Id           string
+	Email        string
+	Name         string
+	CallName     string
+	Institution  string
+	PasswordHash []byte
+	Public       bool
+	GDPRConsent  bool
+	Active       bool
+	Roles        []Role
+}
+
+type Role struct {
+	Id          int
+	Name        string
+	Description string
+}
+
+func RolesToStrings(roles []Role) []string {
+	roleNames := make([]string, 0, len(roles))
+	for _, role := range roles {
+		roleNames = append(roleNames, role.Name)
+	}
+	return roleNames
 }

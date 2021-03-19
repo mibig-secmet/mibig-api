@@ -15,7 +15,7 @@ type MibigModelTest struct {
 	Teardown func()
 }
 
-func newTestDB(t *testing.T) *MibigModelTest {
+func newMibigTestDB(t *testing.T) *MibigModelTest {
 	mt := MibigModelTest{}
 
 	db, err := sql.Open("postgres", "host=localhost port=5432 user=postgres password=secret dbname=mibig_test sslmode=disable")
@@ -55,7 +55,7 @@ func TestMibigModel(t *testing.T) {
 		t.Skip("postgres: skipping integration test")
 	}
 
-	mt := newTestDB(t)
+	mt := newMibigTestDB(t)
 	defer mt.Teardown()
 
 	t.Run("Counts", mt.MibigModelCounts)

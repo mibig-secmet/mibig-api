@@ -16,6 +16,7 @@ limitations under the License.
 package cmd
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 
@@ -75,4 +76,16 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
+}
+
+func InitDb() (*sql.DB, error) {
+	db, err := sql.Open("postgres", viper.GetString("database.uri"))
+	if err != nil {
+		return nil, err
+	}
+
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+	return db, nil
 }

@@ -11,7 +11,21 @@ INSERT INTO mibig.compounds (name, entry_id) VALUES
 ('kirromycin', 1070);
 
 INSERT INTO mibig.rel_entries_types (entry_id, bgc_type_id) VALUES
-(535, 31),
+(535, 32),
 (1070, 2),
 (1070, 15),
 (1070, 13);
+
+INSERT INTO mibig_submitters.submitters (
+    user_id, email, name, call_name, institution, password_hash, is_public, gdpr_consent, active
+) VALUES
+('AAAAAAAAAAAAAAAAAAAAAAAA', 'mibig@example.org', 'MIBiG Submitters', 'MIBiG', 'MIBiG', 'unused', TRUE, TRUE, FALSE),
+('AAAAAAAAAAAAAAAAAAAAAAAB', 'alice@example.org', 'Alice User', 'Alice', 'Testing', 'unused', TRUE, TRUE, TRUE),
+('AAAAAAAAAAAAAAAAAAAAAAAC', 'bob@example.org', 'Bob User', 'Bob', 'Testing', 'unused', TRUE, FALSE, TRUE),
+('AAAAAAAAAAAAAAAAAAAAAAAD', 'chuck@example.org', 'Chuck User', 'Chuck', 'Testing', 'unused', FALSE, FALSE, TRUE);
+
+INSERT INTO mibig_submitters.rel_submitters_roles (user_id, role_id) VALUES
+('AAAAAAAAAAAAAAAAAAAAAAAA', 4),
+('AAAAAAAAAAAAAAAAAAAAAAAB', 1),
+('AAAAAAAAAAAAAAAAAAAAAAAC', 2),
+('AAAAAAAAAAAAAAAAAAAAAAAD', 3);

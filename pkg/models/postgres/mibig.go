@@ -273,11 +273,11 @@ func (m *MibigModel) Search(t queries.QueryTerm) ([]int, error) {
 		}
 		switch v.Operation {
 		case queries.AND:
-			return utils.Intersect(left, right), nil
+			return utils.IntersectInt(left, right), nil
 		case queries.OR:
-			return utils.Union(left, right), nil
+			return utils.UnionInt(left, right), nil
 		case queries.EXCEPT:
-			return utils.Difference(left, right), nil
+			return utils.DifferenceInt(left, right), nil
 		default:
 			return nil, fmt.Errorf("Invalid operation: %s", v.Op())
 		}
